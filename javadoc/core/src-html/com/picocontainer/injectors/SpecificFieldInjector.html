@@ -1,0 +1,294 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*****************************************************************************<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Copyright (C) 2003-2011 PicoContainer Committers. All rights reserved.    *<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * ------------------------------------------------------------------------- *<a name="line.3"></a>
+<span class="sourceLineNo">004</span> * The software in this package is published under the terms of the BSD      *<a name="line.4"></a>
+<span class="sourceLineNo">005</span> * style license a copy of which has been included with this distribution in *<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * the LICENSE.txt file.                                                     *<a name="line.6"></a>
+<span class="sourceLineNo">007</span> *                                                                           *<a name="line.7"></a>
+<span class="sourceLineNo">008</span> *****************************************************************************/<a name="line.8"></a>
+<span class="sourceLineNo">009</span>package com.picocontainer.injectors;<a name="line.9"></a>
+<span class="sourceLineNo">010</span><a name="line.10"></a>
+<span class="sourceLineNo">011</span>import java.lang.annotation.Annotation;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import java.lang.reflect.AccessibleObject;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import java.lang.reflect.Field;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import java.lang.reflect.InvocationTargetException;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import java.lang.reflect.Member;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import java.lang.reflect.Type;<a name="line.16"></a>
+<span class="sourceLineNo">017</span>import java.security.AccessController;<a name="line.17"></a>
+<span class="sourceLineNo">018</span>import java.security.PrivilegedAction;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import java.util.ArrayList;<a name="line.19"></a>
+<span class="sourceLineNo">020</span>import java.util.Arrays;<a name="line.20"></a>
+<span class="sourceLineNo">021</span>import java.util.Collections;<a name="line.21"></a>
+<span class="sourceLineNo">022</span>import java.util.List;<a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span>import com.picocontainer.ComponentMonitor;<a name="line.24"></a>
+<span class="sourceLineNo">025</span>import com.picocontainer.Parameter;<a name="line.25"></a>
+<span class="sourceLineNo">026</span>import com.picocontainer.PicoCompositionException;<a name="line.26"></a>
+<span class="sourceLineNo">027</span>import com.picocontainer.PicoContainer;<a name="line.27"></a>
+<span class="sourceLineNo">028</span>import com.picocontainer.monitors.NullComponentMonitor;<a name="line.28"></a>
+<span class="sourceLineNo">029</span>import com.picocontainer.parameters.FieldParameters;<a name="line.29"></a>
+<span class="sourceLineNo">030</span>import com.picocontainer.parameters.JSR330ComponentParameter;<a name="line.30"></a>
+<span class="sourceLineNo">031</span><a name="line.31"></a>
+<span class="sourceLineNo">032</span>/**<a name="line.32"></a>
+<span class="sourceLineNo">033</span> * Takes specific Fields obtained through reflection and injects them.  Private fields are ok (as per JSR-330), as<a name="line.33"></a>
+<span class="sourceLineNo">034</span> * this class attempts setAccessible(true) before assigning the field.<a name="line.34"></a>
+<span class="sourceLineNo">035</span> * &lt;p&gt;Statics Note:  Either make everything static and use inject statics or make everything non static and use<a name="line.35"></a>
+<span class="sourceLineNo">036</span> * getComponentInstance().&lt;/p&gt;<a name="line.36"></a>
+<span class="sourceLineNo">037</span> * @author Michael Rimov<a name="line.37"></a>
+<span class="sourceLineNo">038</span> */<a name="line.38"></a>
+<span class="sourceLineNo">039</span>@SuppressWarnings("serial")<a name="line.39"></a>
+<span class="sourceLineNo">040</span>public class SpecificFieldInjector&lt;T&gt; extends AbstractFieldInjector&lt;T&gt; implements StaticInjector&lt;T&gt;{<a name="line.40"></a>
+<span class="sourceLineNo">041</span><a name="line.41"></a>
+<span class="sourceLineNo">042</span>    private Field[] fieldsToInject;<a name="line.42"></a>
+<span class="sourceLineNo">043</span><a name="line.43"></a>
+<span class="sourceLineNo">044</span>    private boolean isStaticInjection = false;<a name="line.44"></a>
+<span class="sourceLineNo">045</span><a name="line.45"></a>
+<span class="sourceLineNo">046</span>    private transient ThreadLocalCyclicDependencyGuard&lt;T&gt; instantiationGuard;<a name="line.46"></a>
+<span class="sourceLineNo">047</span><a name="line.47"></a>
+<span class="sourceLineNo">048</span>    /**<a name="line.48"></a>
+<span class="sourceLineNo">049</span>     * Ugly hack to pass the initialized reference set to the inject method<a name="line.49"></a>
+<span class="sourceLineNo">050</span>     * without affecting base class signatures.<a name="line.50"></a>
+<span class="sourceLineNo">051</span>     * @todo figure out something better.<a name="line.51"></a>
+<span class="sourceLineNo">052</span>     */<a name="line.52"></a>
+<span class="sourceLineNo">053</span>        private transient StaticsInitializedReferenceSet initializedReferenceSet;<a name="line.53"></a>
+<span class="sourceLineNo">054</span><a name="line.54"></a>
+<span class="sourceLineNo">055</span>    /**<a name="line.55"></a>
+<span class="sourceLineNo">056</span>     * Simple testing constructor.<a name="line.56"></a>
+<span class="sourceLineNo">057</span>     * @param key<a name="line.57"></a>
+<span class="sourceLineNo">058</span>     * @param impl<a name="line.58"></a>
+<span class="sourceLineNo">059</span>     * @param fieldsToInject<a name="line.59"></a>
+<span class="sourceLineNo">060</span>     */<a name="line.60"></a>
+<span class="sourceLineNo">061</span>    public SpecificFieldInjector(final Object key, final Class&lt;T&gt; impl, final Field... fieldsToInject) {<a name="line.61"></a>
+<span class="sourceLineNo">062</span>        this(key, impl, new NullComponentMonitor(), false, true, null, fieldsToInject);<a name="line.62"></a>
+<span class="sourceLineNo">063</span>    }<a name="line.63"></a>
+<span class="sourceLineNo">064</span><a name="line.64"></a>
+<span class="sourceLineNo">065</span>    /**<a name="line.65"></a>
+<span class="sourceLineNo">066</span>     * Usual constructor invoked during runtime.<a name="line.66"></a>
+<span class="sourceLineNo">067</span>     * @param key<a name="line.67"></a>
+<span class="sourceLineNo">068</span>     * @param impl<a name="line.68"></a>
+<span class="sourceLineNo">069</span>     * @param monitor<a name="line.69"></a>
+<span class="sourceLineNo">070</span>     * @param requireConsumptionOfAllParameters<a name="line.70"></a>
+<span class="sourceLineNo">071</span>     * @param parameters<a name="line.71"></a>
+<span class="sourceLineNo">072</span>     * @param fieldsToInject<a name="line.72"></a>
+<span class="sourceLineNo">073</span>     */<a name="line.73"></a>
+<span class="sourceLineNo">074</span>        public SpecificFieldInjector(final Object key, final Class&lt;T&gt; impl, final ComponentMonitor monitor, final boolean useNames,<a name="line.74"></a>
+<span class="sourceLineNo">075</span>            final boolean requireConsumptionOfAllParameters, final FieldParameters[] parameters, final Field... fieldsToInject) {<a name="line.75"></a>
+<span class="sourceLineNo">076</span><a name="line.76"></a>
+<span class="sourceLineNo">077</span>                /* todo: can't use fields with paranamer */<a name="line.77"></a>
+<span class="sourceLineNo">078</span>                super(key, impl, monitor, false, requireConsumptionOfAllParameters, parameters);<a name="line.78"></a>
+<span class="sourceLineNo">079</span>                this.fieldsToInject = fieldsToInject;<a name="line.79"></a>
+<span class="sourceLineNo">080</span><a name="line.80"></a>
+<span class="sourceLineNo">081</span><a name="line.81"></a>
+<span class="sourceLineNo">082</span>                this.isStaticInjection = isStaticInjection(fieldsToInject);<a name="line.82"></a>
+<span class="sourceLineNo">083</span><a name="line.83"></a>
+<span class="sourceLineNo">084</span>        }<a name="line.84"></a>
+<span class="sourceLineNo">085</span><a name="line.85"></a>
+<span class="sourceLineNo">086</span><a name="line.86"></a>
+<span class="sourceLineNo">087</span><a name="line.87"></a>
+<span class="sourceLineNo">088</span>        public void injectStatics(final PicoContainer container, final Type into, final StaticsInitializedReferenceSet initializedReferenceSet) {<a name="line.88"></a>
+<span class="sourceLineNo">089</span>                this.initializedReferenceSet = initializedReferenceSet;<a name="line.89"></a>
+<span class="sourceLineNo">090</span>                if (!isStaticInjection) {<a name="line.90"></a>
+<span class="sourceLineNo">091</span>                        throw new PicoCompositionException(Arrays.deepToString(fieldsToInject) + " are non static fields, injectStatics should not be called.");<a name="line.91"></a>
+<span class="sourceLineNo">092</span>                }<a name="line.92"></a>
+<span class="sourceLineNo">093</span><a name="line.93"></a>
+<span class="sourceLineNo">094</span>        boolean iInstantiated = false;<a name="line.94"></a>
+<span class="sourceLineNo">095</span>        try {<a name="line.95"></a>
+<span class="sourceLineNo">096</span>                if (instantiationGuard == null) {<a name="line.96"></a>
+<span class="sourceLineNo">097</span>                        iInstantiated = true;<a name="line.97"></a>
+<span class="sourceLineNo">098</span>                    instantiationGuard = new ThreadLocalCyclicDependencyGuard&lt;T&gt;() {<a name="line.98"></a>
+<span class="sourceLineNo">099</span>                        @Override<a name="line.99"></a>
+<span class="sourceLineNo">100</span>                                        public T run(final Object instance) {<a name="line.100"></a>
+<span class="sourceLineNo">101</span>                            final ParameterToAccessibleObjectPair[] matchingParameters = getMatchingParameterListForMembers(guardedContainer);<a name="line.101"></a>
+<span class="sourceLineNo">102</span><a name="line.102"></a>
+<span class="sourceLineNo">103</span>                            //Funky call where the instance we're decorating<a name="line.103"></a>
+<span class="sourceLineNo">104</span>                            //happens to be null for static injection.<a name="line.104"></a>
+<span class="sourceLineNo">105</span>                            return  decorateComponentInstance(matchingParameters, currentMonitor(), null, container, guardedContainer, into, null);<a name="line.105"></a>
+<span class="sourceLineNo">106</span>                        }<a name="line.106"></a>
+<span class="sourceLineNo">107</span>                    };<a name="line.107"></a>
+<span class="sourceLineNo">108</span>                }<a name="line.108"></a>
+<span class="sourceLineNo">109</span>                instantiationGuard.setGuardedContainer(container);<a name="line.109"></a>
+<span class="sourceLineNo">110</span>                instantiationGuard.observe(getComponentImplementation(), null);<a name="line.110"></a>
+<span class="sourceLineNo">111</span>        } finally {<a name="line.111"></a>
+<span class="sourceLineNo">112</span>                if (iInstantiated) {<a name="line.112"></a>
+<span class="sourceLineNo">113</span>                        instantiationGuard.remove();<a name="line.113"></a>
+<span class="sourceLineNo">114</span>                        instantiationGuard = null;<a name="line.114"></a>
+<span class="sourceLineNo">115</span>                }<a name="line.115"></a>
+<span class="sourceLineNo">116</span><a name="line.116"></a>
+<span class="sourceLineNo">117</span>                this.initializedReferenceSet = null;<a name="line.117"></a>
+<span class="sourceLineNo">118</span>        }<a name="line.118"></a>
+<span class="sourceLineNo">119</span>        }<a name="line.119"></a>
+<span class="sourceLineNo">120</span><a name="line.120"></a>
+<span class="sourceLineNo">121</span><a name="line.121"></a>
+<span class="sourceLineNo">122</span>        @Override<a name="line.122"></a>
+<span class="sourceLineNo">123</span>        protected void initializeInjectionMembersAndTypeLists() {<a name="line.123"></a>
+<span class="sourceLineNo">124</span>                injectionMembers = new ArrayList&lt;AccessibleObject&gt;();<a name="line.124"></a>
+<span class="sourceLineNo">125</span>        List&lt;Annotation&gt; bindingIds = new ArrayList&lt;Annotation&gt;();<a name="line.125"></a>
+<span class="sourceLineNo">126</span>        final List&lt;Type&gt; typeList = new ArrayList&lt;Type&gt;();<a name="line.126"></a>
+<span class="sourceLineNo">127</span>        for (Field eachFieldToInject : fieldsToInject) {<a name="line.127"></a>
+<span class="sourceLineNo">128</span>                injectionMembers.add(eachFieldToInject);<a name="line.128"></a>
+<span class="sourceLineNo">129</span>        }<a name="line.129"></a>
+<span class="sourceLineNo">130</span><a name="line.130"></a>
+<span class="sourceLineNo">131</span>        //Sort for injection.<a name="line.131"></a>
+<span class="sourceLineNo">132</span>        Collections.sort(injectionMembers, new JSRAccessibleObjectOrderComparator());<a name="line.132"></a>
+<span class="sourceLineNo">133</span><a name="line.133"></a>
+<span class="sourceLineNo">134</span>        for (AccessibleObject eachMember : injectionMembers) {<a name="line.134"></a>
+<span class="sourceLineNo">135</span>                Field field = (Field)eachMember;<a name="line.135"></a>
+<span class="sourceLineNo">136</span>            typeList.add(box(field.getGenericType()));<a name="line.136"></a>
+<span class="sourceLineNo">137</span>            bindingIds.add(AnnotatedFieldInjection.AnnotatedFieldInjector.getBinding(field));<a name="line.137"></a>
+<span class="sourceLineNo">138</span><a name="line.138"></a>
+<span class="sourceLineNo">139</span>        }<a name="line.139"></a>
+<span class="sourceLineNo">140</span><a name="line.140"></a>
+<span class="sourceLineNo">141</span>        injectionTypes = typeList.toArray(new Type[0]);<a name="line.141"></a>
+<span class="sourceLineNo">142</span>        bindings = bindingIds.toArray(new Annotation[0]);<a name="line.142"></a>
+<span class="sourceLineNo">143</span><a name="line.143"></a>
+<span class="sourceLineNo">144</span>        }<a name="line.144"></a>
+<span class="sourceLineNo">145</span><a name="line.145"></a>
+<span class="sourceLineNo">146</span><a name="line.146"></a>
+<span class="sourceLineNo">147</span>        @Override<a name="line.147"></a>
+<span class="sourceLineNo">148</span>        protected Object memberInvocationReturn(final Object lastReturn, final AccessibleObject member, final Object instance) {<a name="line.148"></a>
+<span class="sourceLineNo">149</span>                return instance;<a name="line.149"></a>
+<span class="sourceLineNo">150</span>        }<a name="line.150"></a>
+<span class="sourceLineNo">151</span><a name="line.151"></a>
+<span class="sourceLineNo">152</span>        @Override<a name="line.152"></a>
+<span class="sourceLineNo">153</span>        protected Object injectIntoMember(final AccessibleObject member, final Object componentInstance, final Object toInject)<a name="line.153"></a>
+<span class="sourceLineNo">154</span>                        throws IllegalAccessException, InvocationTargetException {<a name="line.154"></a>
+<span class="sourceLineNo">155</span><a name="line.155"></a>
+<span class="sourceLineNo">156</span>        final Field field = (Field) member;<a name="line.156"></a>
+<span class="sourceLineNo">157</span><a name="line.157"></a>
+<span class="sourceLineNo">158</span>        if (initializedReferenceSet != null) {<a name="line.158"></a>
+<span class="sourceLineNo">159</span>                //Were doing static initialization.  Need locking on<a name="line.159"></a>
+<span class="sourceLineNo">160</span>                //the class level.<a name="line.160"></a>
+<span class="sourceLineNo">161</span>            synchronized(field.getDeclaringClass()) {<a name="line.161"></a>
+<span class="sourceLineNo">162</span>                        if (!this.initializedReferenceSet.isMemberAlreadyInitialized((Member)member)) {<a name="line.162"></a>
+<span class="sourceLineNo">163</span>                                doInjection(member, componentInstance, toInject, field);<a name="line.163"></a>
+<span class="sourceLineNo">164</span>                                initializedReferenceSet.markMemberInitialized((Member)member);<a name="line.164"></a>
+<span class="sourceLineNo">165</span>                        }<a name="line.165"></a>
+<span class="sourceLineNo">166</span>            }<a name="line.166"></a>
+<span class="sourceLineNo">167</span>        } else {<a name="line.167"></a>
+<span class="sourceLineNo">168</span>                doInjection(member, componentInstance, toInject, field);<a name="line.168"></a>
+<span class="sourceLineNo">169</span>        }<a name="line.169"></a>
+<span class="sourceLineNo">170</span><a name="line.170"></a>
+<span class="sourceLineNo">171</span>        return null;<a name="line.171"></a>
+<span class="sourceLineNo">172</span>     }<a name="line.172"></a>
+<span class="sourceLineNo">173</span><a name="line.173"></a>
+<span class="sourceLineNo">174</span>        private void doInjection(final AccessibleObject member, final Object componentInstance, final Object toInject, final Field field)<a name="line.174"></a>
+<span class="sourceLineNo">175</span>                        throws IllegalAccessException {<a name="line.175"></a>
+<span class="sourceLineNo">176</span>            AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {<a name="line.176"></a>
+<span class="sourceLineNo">177</span>                        public Void run() {<a name="line.177"></a>
+<span class="sourceLineNo">178</span>                    field.setAccessible(true);<a name="line.178"></a>
+<span class="sourceLineNo">179</span>                    return null;<a name="line.179"></a>
+<span class="sourceLineNo">180</span>                        }<a name="line.180"></a>
+<span class="sourceLineNo">181</span>            });<a name="line.181"></a>
+<span class="sourceLineNo">182</span><a name="line.182"></a>
+<span class="sourceLineNo">183</span>            field.set(componentInstance, toInject);<a name="line.183"></a>
+<span class="sourceLineNo">184</span>        }<a name="line.184"></a>
+<span class="sourceLineNo">185</span><a name="line.185"></a>
+<span class="sourceLineNo">186</span>        @Override<a name="line.186"></a>
+<span class="sourceLineNo">187</span>        public T getComponentInstance(final PicoContainer container, final Type into) throws PicoCompositionException {<a name="line.187"></a>
+<span class="sourceLineNo">188</span>                if (isStaticInjection) {<a name="line.188"></a>
+<span class="sourceLineNo">189</span>                        throw new PicoCompositionException(Arrays.deepToString(fieldsToInject) + " are static fields, getComponentInstance() on this adapter should not be called.");<a name="line.189"></a>
+<span class="sourceLineNo">190</span>                }<a name="line.190"></a>
+<span class="sourceLineNo">191</span><a name="line.191"></a>
+<span class="sourceLineNo">192</span>                return super.getComponentInstance(container, into);<a name="line.192"></a>
+<span class="sourceLineNo">193</span>        }<a name="line.193"></a>
+<span class="sourceLineNo">194</span><a name="line.194"></a>
+<span class="sourceLineNo">195</span>        @Override<a name="line.195"></a>
+<span class="sourceLineNo">196</span>        public String getDescriptor() {<a name="line.196"></a>
+<span class="sourceLineNo">197</span><a name="line.197"></a>
+<span class="sourceLineNo">198</span>        StringBuilder fields = new StringBuilder();<a name="line.198"></a>
+<span class="sourceLineNo">199</span>        for (Field eachField : fieldsToInject) {<a name="line.199"></a>
+<span class="sourceLineNo">200</span>            fields.append(",").append(eachField.getDeclaringClass().getName()).append(".").append(eachField.getName());<a name="line.200"></a>
+<span class="sourceLineNo">201</span>        }<a name="line.201"></a>
+<span class="sourceLineNo">202</span>        return "SpecificReflectionFieldInjector " + (isStaticInjection ? " static " : "") + "[" +  fields.substring(1) + "]-";<a name="line.202"></a>
+<span class="sourceLineNo">203</span>        }<a name="line.203"></a>
+<span class="sourceLineNo">204</span><a name="line.204"></a>
+<span class="sourceLineNo">205</span><a name="line.205"></a>
+<span class="sourceLineNo">206</span>    /**<a name="line.206"></a>
+<span class="sourceLineNo">207</span>     * Allows Different swapping of types.<a name="line.207"></a>
+<span class="sourceLineNo">208</span>     * @return<a name="line.208"></a>
+<span class="sourceLineNo">209</span>     */<a name="line.209"></a>
+<span class="sourceLineNo">210</span>    @Override<a name="line.210"></a>
+<span class="sourceLineNo">211</span>    protected Parameter constructDefaultComponentParameter() {<a name="line.211"></a>
+<span class="sourceLineNo">212</span>        return JSR330ComponentParameter.DEFAULT;<a name="line.212"></a>
+<span class="sourceLineNo">213</span>    }<a name="line.213"></a>
+<span class="sourceLineNo">214</span><a name="line.214"></a>
+<span class="sourceLineNo">215</span>        @Override<a name="line.215"></a>
+<span class="sourceLineNo">216</span>        protected Parameter[] interceptParametersToUse(final Parameter[] currentParameters, final AccessibleObject member) {<a name="line.216"></a>
+<span class="sourceLineNo">217</span>                return AnnotationInjectionUtils.interceptParametersToUse(currentParameters, member);<a name="line.217"></a>
+<span class="sourceLineNo">218</span>        }<a name="line.218"></a>
+<span class="sourceLineNo">219</span><a name="line.219"></a>
+<span class="sourceLineNo">220</span><a name="line.220"></a>
+<span class="sourceLineNo">221</span><a name="line.221"></a>
+<span class="sourceLineNo">222</span>}<a name="line.222"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

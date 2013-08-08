@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>package com.picocontainer.converters;<a name="line.1"></a>
+<span class="sourceLineNo">002</span><a name="line.2"></a>
+<span class="sourceLineNo">003</span>import java.io.File;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import java.io.Serializable;<a name="line.4"></a>
+<span class="sourceLineNo">005</span>import java.lang.reflect.Type;<a name="line.5"></a>
+<span class="sourceLineNo">006</span>import java.net.URL;<a name="line.6"></a>
+<span class="sourceLineNo">007</span>import java.util.HashMap;<a name="line.7"></a>
+<span class="sourceLineNo">008</span>import java.util.Map;<a name="line.8"></a>
+<span class="sourceLineNo">009</span><a name="line.9"></a>
+<span class="sourceLineNo">010</span>import com.picocontainer.Converters;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import com.picocontainer.DefaultPicoContainer;<a name="line.11"></a>
+<span class="sourceLineNo">012</span><a name="line.12"></a>
+<span class="sourceLineNo">013</span>/**<a name="line.13"></a>
+<span class="sourceLineNo">014</span> * Provides some built-in converters used by {@link DefaultPicoContainer}. It<a name="line.14"></a>
+<span class="sourceLineNo">015</span> * supports by default primitive types (and boxed equivalents) and for<a name="line.15"></a>
+<span class="sourceLineNo">016</span> * {@link File} and {@link URL} types. Built-in converters can be changed by<a name="line.16"></a>
+<span class="sourceLineNo">017</span> * extending the class and overriding the method {@link #addBuiltInConverters()}.<a name="line.17"></a>
+<span class="sourceLineNo">018</span> */<a name="line.18"></a>
+<span class="sourceLineNo">019</span>@SuppressWarnings("serial")<a name="line.19"></a>
+<span class="sourceLineNo">020</span>public class BuiltInConverters implements Converters, Serializable {<a name="line.20"></a>
+<span class="sourceLineNo">021</span><a name="line.21"></a>
+<span class="sourceLineNo">022</span>    private final Map&lt;Class&lt;?&gt;, Converter&lt;?&gt;&gt; converters = new HashMap&lt;Class&lt;?&gt;, Converter&lt;?&gt;&gt;();<a name="line.22"></a>
+<span class="sourceLineNo">023</span><a name="line.23"></a>
+<span class="sourceLineNo">024</span>    public BuiltInConverters() {<a name="line.24"></a>
+<span class="sourceLineNo">025</span>        addBuiltInConverters();<a name="line.25"></a>
+<span class="sourceLineNo">026</span>    }<a name="line.26"></a>
+<span class="sourceLineNo">027</span><a name="line.27"></a>
+<span class="sourceLineNo">028</span>    protected void addBuiltInConverters() {<a name="line.28"></a>
+<span class="sourceLineNo">029</span>        addMultiTypeConverter(new IntegerConverter(), Integer.class, Integer.TYPE);<a name="line.29"></a>
+<span class="sourceLineNo">030</span>        addMultiTypeConverter(new DoubleConverter(), Double.class, Double.TYPE);<a name="line.30"></a>
+<span class="sourceLineNo">031</span>        addMultiTypeConverter(new BooleanConverter(), Boolean.class, Boolean.TYPE);<a name="line.31"></a>
+<span class="sourceLineNo">032</span>        addMultiTypeConverter(new LongConverter(), Long.class, Long.TYPE);<a name="line.32"></a>
+<span class="sourceLineNo">033</span>        addMultiTypeConverter(new FloatConverter(), Float.class, Float.TYPE);<a name="line.33"></a>
+<span class="sourceLineNo">034</span>        addMultiTypeConverter(new CharacterConverter(), Character.class, Character.TYPE);<a name="line.34"></a>
+<span class="sourceLineNo">035</span>        addMultiTypeConverter(new ByteConverter(), Byte.class, Byte.TYPE);<a name="line.35"></a>
+<span class="sourceLineNo">036</span>        addMultiTypeConverter(new ShortConverter(), Short.class, Short.TYPE);<a name="line.36"></a>
+<span class="sourceLineNo">037</span>        addConverter(new FileConverter(), File.class);<a name="line.37"></a>
+<span class="sourceLineNo">038</span>        addConverter(new UrlConverter(), URL.class);<a name="line.38"></a>
+<span class="sourceLineNo">039</span>    }<a name="line.39"></a>
+<span class="sourceLineNo">040</span><a name="line.40"></a>
+<span class="sourceLineNo">041</span>    private void addMultiTypeConverter(final Converter&lt;?&gt; converter, final Class&lt;?&gt;... types) {<a name="line.41"></a>
+<span class="sourceLineNo">042</span>        for (Class&lt;?&gt; type : types) {<a name="line.42"></a>
+<span class="sourceLineNo">043</span>            addConverter(converter, type);<a name="line.43"></a>
+<span class="sourceLineNo">044</span>        }<a name="line.44"></a>
+<span class="sourceLineNo">045</span>    }<a name="line.45"></a>
+<span class="sourceLineNo">046</span><a name="line.46"></a>
+<span class="sourceLineNo">047</span>    protected void addConverter(final Converter&lt;?&gt; converter, final Class&lt;?&gt; key) {<a name="line.47"></a>
+<span class="sourceLineNo">048</span>        converters.put(key, converter);<a name="line.48"></a>
+<span class="sourceLineNo">049</span>    }<a name="line.49"></a>
+<span class="sourceLineNo">050</span><a name="line.50"></a>
+<span class="sourceLineNo">051</span>    public boolean canConvert(final Type type) {<a name="line.51"></a>
+<span class="sourceLineNo">052</span>        return converters.containsKey(type);<a name="line.52"></a>
+<span class="sourceLineNo">053</span>    }<a name="line.53"></a>
+<span class="sourceLineNo">054</span><a name="line.54"></a>
+<span class="sourceLineNo">055</span>    public Object convert(final String paramValue, final Type type) {<a name="line.55"></a>
+<span class="sourceLineNo">056</span>        Converter&lt;?&gt; converter = converters.get(type);<a name="line.56"></a>
+<span class="sourceLineNo">057</span>        if (converter == null) {<a name="line.57"></a>
+<span class="sourceLineNo">058</span>            return null;<a name="line.58"></a>
+<span class="sourceLineNo">059</span>        }<a name="line.59"></a>
+<span class="sourceLineNo">060</span>        return converter.convert(paramValue);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>    }<a name="line.61"></a>
+<span class="sourceLineNo">062</span><a name="line.62"></a>
+<span class="sourceLineNo">063</span>}<a name="line.63"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

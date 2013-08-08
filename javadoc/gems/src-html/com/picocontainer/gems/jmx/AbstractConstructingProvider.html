@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*****************************************************************************<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Copyright (C) 2003-2011 PicoContainer Committers. All rights reserved.    *<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * ------------------------------------------------------------------------- *<a name="line.3"></a>
+<span class="sourceLineNo">004</span> * The software in this package is published under the terms of the BSD      *<a name="line.4"></a>
+<span class="sourceLineNo">005</span> * style license a copy of which has been included with this distribution in *<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * the LICENSE.txt file.                                                     *<a name="line.6"></a>
+<span class="sourceLineNo">007</span> *                                                                           *<a name="line.7"></a>
+<span class="sourceLineNo">008</span> * Original code by Joerg Schaible                                           *<a name="line.8"></a>
+<span class="sourceLineNo">009</span> *****************************************************************************/<a name="line.9"></a>
+<span class="sourceLineNo">010</span><a name="line.10"></a>
+<span class="sourceLineNo">011</span>package com.picocontainer.gems.jmx;<a name="line.11"></a>
+<span class="sourceLineNo">012</span><a name="line.12"></a>
+<span class="sourceLineNo">013</span>import javax.management.DynamicMBean;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import javax.management.MBeanInfo;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import javax.management.MalformedObjectNameException;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import javax.management.ObjectName;<a name="line.16"></a>
+<span class="sourceLineNo">017</span><a name="line.17"></a>
+<span class="sourceLineNo">018</span>import com.picocontainer.ComponentAdapter;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import com.picocontainer.PicoContainer;<a name="line.19"></a>
+<span class="sourceLineNo">020</span><a name="line.20"></a>
+<span class="sourceLineNo">021</span><a name="line.21"></a>
+<span class="sourceLineNo">022</span>/**<a name="line.22"></a>
+<span class="sourceLineNo">023</span> * A DynamicMBeanProvider that constructs StandardMBean instances that as long as an ObjectName and a MBeanInfo can be<a name="line.23"></a>
+<span class="sourceLineNo">024</span> * generated for the component.<a name="line.24"></a>
+<span class="sourceLineNo">025</span> * @author J&amp;ouml;rg Schaible<a name="line.25"></a>
+<span class="sourceLineNo">026</span> */<a name="line.26"></a>
+<span class="sourceLineNo">027</span>public abstract class AbstractConstructingProvider implements DynamicMBeanProvider {<a name="line.27"></a>
+<span class="sourceLineNo">028</span><a name="line.28"></a>
+<span class="sourceLineNo">029</span>    /**<a name="line.29"></a>
+<span class="sourceLineNo">030</span>     * Create a StandardMBean from the component provided by the ComponentAdapter. One of the registered<a name="line.30"></a>
+<span class="sourceLineNo">031</span>     * {@link MBeanInfoProvider} instances must provide a {@link MBeanInfo} for the component and the registered<a name="line.31"></a>
+<span class="sourceLineNo">032</span>     * {@link ObjectNameFactory} has to provide a proper {@link ObjectName}.<a name="line.32"></a>
+<span class="sourceLineNo">033</span>     * &lt;p&gt;<a name="line.33"></a>
+<span class="sourceLineNo">034</span>     * Note: An instance of the component is only created, if a management interface is available.<a name="line.34"></a>
+<span class="sourceLineNo">035</span>     * &lt;/p&gt;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>     * @see com.picocontainer.gems.jmx.DynamicMBeanProvider#provide(com.picocontainer.PicoContainer,<a name="line.36"></a>
+<span class="sourceLineNo">037</span>     *      com.picocontainer.ComponentAdapter)<a name="line.37"></a>
+<span class="sourceLineNo">038</span>     */<a name="line.38"></a>
+<span class="sourceLineNo">039</span>    public JMXRegistrationInfo provide(final PicoContainer picoContainer, final ComponentAdapter componentAdapter) {<a name="line.39"></a>
+<span class="sourceLineNo">040</span><a name="line.40"></a>
+<span class="sourceLineNo">041</span>        // locate MBeanInfo<a name="line.41"></a>
+<span class="sourceLineNo">042</span>        MBeanInfo mBeanInfo = null;<a name="line.42"></a>
+<span class="sourceLineNo">043</span>        MBeanInfoProvider[] mBeanInfoProviders = getMBeanInfoProviders();<a name="line.43"></a>
+<span class="sourceLineNo">044</span>        for (int i = 0; i &lt; mBeanInfoProviders.length &amp;&amp; mBeanInfo == null; ++i) {<a name="line.44"></a>
+<span class="sourceLineNo">045</span>            mBeanInfo = mBeanInfoProviders[i].provide(picoContainer, componentAdapter);<a name="line.45"></a>
+<span class="sourceLineNo">046</span>        }<a name="line.46"></a>
+<span class="sourceLineNo">047</span><a name="line.47"></a>
+<span class="sourceLineNo">048</span>                Class management = null;<a name="line.48"></a>
+<span class="sourceLineNo">049</span>                try {<a name="line.49"></a>
+<span class="sourceLineNo">050</span>                // throws ClassNotFoundException if not successful<a name="line.50"></a>
+<span class="sourceLineNo">051</span>                         management = getManagementInterface(componentAdapter.getComponentImplementation(), mBeanInfo);<a name="line.51"></a>
+<span class="sourceLineNo">052</span>                } catch (final ClassNotFoundException e) {<a name="line.52"></a>
+<span class="sourceLineNo">053</span>                        // No management interface available<a name="line.53"></a>
+<span class="sourceLineNo">054</span>                }<a name="line.54"></a>
+<span class="sourceLineNo">055</span><a name="line.55"></a>
+<span class="sourceLineNo">056</span>                if(management != null || mBeanInfo != null) {<a name="line.56"></a>
+<span class="sourceLineNo">057</span>                        try {<a name="line.57"></a>
+<span class="sourceLineNo">058</span>                                // create MBean<a name="line.58"></a>
+<span class="sourceLineNo">059</span>                                final DynamicMBean mBean = getMBeanFactory().create(<a name="line.59"></a>
+<span class="sourceLineNo">060</span>                                                componentAdapter.getComponentInstance(picoContainer,null), management, mBeanInfo);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>                                final ObjectName objectName = getObjectNameFactory().create(componentAdapter.getComponentKey(), mBean);<a name="line.61"></a>
+<span class="sourceLineNo">062</span>                                if (objectName != null) {<a name="line.62"></a>
+<span class="sourceLineNo">063</span>                                        return new JMXRegistrationInfo(objectName, mBean);<a name="line.63"></a>
+<span class="sourceLineNo">064</span>                                }<a name="line.64"></a>
+<span class="sourceLineNo">065</span>                        } catch (final MalformedObjectNameException e) {<a name="line.65"></a>
+<span class="sourceLineNo">066</span>                                throw new JMXRegistrationException("Cannot create ObjectName for component '"<a name="line.66"></a>
+<span class="sourceLineNo">067</span>                                                + componentAdapter.getComponentKey()<a name="line.67"></a>
+<span class="sourceLineNo">068</span>                                                + "'", e);<a name="line.68"></a>
+<span class="sourceLineNo">069</span>                        }<a name="line.69"></a>
+<span class="sourceLineNo">070</span>                }<a name="line.70"></a>
+<span class="sourceLineNo">071</span>                return null;<a name="line.71"></a>
+<span class="sourceLineNo">072</span>    }<a name="line.72"></a>
+<span class="sourceLineNo">073</span><a name="line.73"></a>
+<span class="sourceLineNo">074</span>    /**<a name="line.74"></a>
+<span class="sourceLineNo">075</span>     * @return Returns the {@link DynamicMBeanFactory} to use.<a name="line.75"></a>
+<span class="sourceLineNo">076</span>     */<a name="line.76"></a>
+<span class="sourceLineNo">077</span>    protected abstract DynamicMBeanFactory getMBeanFactory();<a name="line.77"></a>
+<span class="sourceLineNo">078</span><a name="line.78"></a>
+<span class="sourceLineNo">079</span>    /**<a name="line.79"></a>
+<span class="sourceLineNo">080</span>     * Deliver the ObjectNameFactory used to provide the {@link ObjectName} instances registering the MBeans.<a name="line.80"></a>
+<span class="sourceLineNo">081</span>     * @return Return the {@link ObjectNameFactory} instance.<a name="line.81"></a>
+<span class="sourceLineNo">082</span>     */<a name="line.82"></a>
+<span class="sourceLineNo">083</span>    protected abstract ObjectNameFactory getObjectNameFactory();<a name="line.83"></a>
+<span class="sourceLineNo">084</span><a name="line.84"></a>
+<span class="sourceLineNo">085</span>    /**<a name="line.85"></a>
+<span class="sourceLineNo">086</span>     * Deliver the MBeanInfoProvider instances to use. The instances are used in the delivered sequence to retrieve a<a name="line.86"></a>
+<span class="sourceLineNo">087</span>     * {@link MBeanInfo} for a MBean to create. It is valid for an implementation to return an empty array.<a name="line.87"></a>
+<span class="sourceLineNo">088</span>     * @return Return an array of {@link MBeanInfoProvider} instances.<a name="line.88"></a>
+<span class="sourceLineNo">089</span>     */<a name="line.89"></a>
+<span class="sourceLineNo">090</span>    protected abstract MBeanInfoProvider[] getMBeanInfoProviders();<a name="line.90"></a>
+<span class="sourceLineNo">091</span><a name="line.91"></a>
+<span class="sourceLineNo">092</span>    /**<a name="line.92"></a>
+<span class="sourceLineNo">093</span>     * Determin the management interface from the component implementation type and an optional MBeanInfo instance.<a name="line.93"></a>
+<span class="sourceLineNo">094</span>     * @param implementation The type of the component's implementation.<a name="line.94"></a>
+<span class="sourceLineNo">095</span>     * @param mBeanInfo The {@link MBeanInfo} to expose the component. May be &lt;code&gt;null&lt;/code&gt;.<a name="line.95"></a>
+<span class="sourceLineNo">096</span>     * @return Returns the management interface.<a name="line.96"></a>
+<span class="sourceLineNo">097</span>     * @throws ClassNotFoundException Thrown if no interface can be determined.<a name="line.97"></a>
+<span class="sourceLineNo">098</span>     */<a name="line.98"></a>
+<span class="sourceLineNo">099</span>    protected abstract Class getManagementInterface(final Class implementation, final MBeanInfo mBeanInfo)<a name="line.99"></a>
+<span class="sourceLineNo">100</span>            throws ClassNotFoundException;<a name="line.100"></a>
+<span class="sourceLineNo">101</span>}<a name="line.101"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

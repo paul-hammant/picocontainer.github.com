@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>package com.picocontainer.containers;<a name="line.1"></a>
+<span class="sourceLineNo">002</span><a name="line.2"></a>
+<span class="sourceLineNo">003</span>import static org.junit.Assert.assertEquals;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import static org.junit.Assert.assertSame;<a name="line.4"></a>
+<span class="sourceLineNo">005</span><a name="line.5"></a>
+<span class="sourceLineNo">006</span>import java.util.Properties;<a name="line.6"></a>
+<span class="sourceLineNo">007</span><a name="line.7"></a>
+<span class="sourceLineNo">008</span>import javax.inject.Named;<a name="line.8"></a>
+<span class="sourceLineNo">009</span><a name="line.9"></a>
+<span class="sourceLineNo">010</span>import org.junit.Test;<a name="line.10"></a>
+<span class="sourceLineNo">011</span><a name="line.11"></a>
+<span class="sourceLineNo">012</span>import com.picocontainer.Characteristics;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import com.picocontainer.DefaultPicoContainer;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import com.picocontainer.containers.PropertiesPicoContainer;<a name="line.14"></a>
+<span class="sourceLineNo">015</span><a name="line.15"></a>
+<span class="sourceLineNo">016</span>/**<a name="line.16"></a>
+<span class="sourceLineNo">017</span> * test that properties container works properly<a name="line.17"></a>
+<span class="sourceLineNo">018</span> * @author Konstantin Pribluda<a name="line.18"></a>
+<span class="sourceLineNo">019</span> */<a name="line.19"></a>
+<span class="sourceLineNo">020</span>public class PropertiesPicoContainerTestCase {<a name="line.20"></a>
+<span class="sourceLineNo">021</span>        /**<a name="line.21"></a>
+<span class="sourceLineNo">022</span>         * all properties specified in constructor shall be<a name="line.22"></a>
+<span class="sourceLineNo">023</span>         * placed into container as strings<a name="line.23"></a>
+<span class="sourceLineNo">024</span>         *<a name="line.24"></a>
+<span class="sourceLineNo">025</span>         */<a name="line.25"></a>
+<span class="sourceLineNo">026</span>        @Test public void testThatAllPropertiesAreAdded() {<a name="line.26"></a>
+<span class="sourceLineNo">027</span>                Properties properties = new Properties();<a name="line.27"></a>
+<span class="sourceLineNo">028</span><a name="line.28"></a>
+<span class="sourceLineNo">029</span>                properties.put("foo","bar");<a name="line.29"></a>
+<span class="sourceLineNo">030</span>                properties.put("blurge","bang");<a name="line.30"></a>
+<span class="sourceLineNo">031</span><a name="line.31"></a>
+<span class="sourceLineNo">032</span><a name="line.32"></a>
+<span class="sourceLineNo">033</span>                PropertiesPicoContainer container = new PropertiesPicoContainer(properties);<a name="line.33"></a>
+<span class="sourceLineNo">034</span>                assertEquals("bar",container.getComponent("foo"));<a name="line.34"></a>
+<span class="sourceLineNo">035</span>                assertEquals("bang",container.getComponent("blurge"));<a name="line.35"></a>
+<span class="sourceLineNo">036</span>        }<a name="line.36"></a>
+<span class="sourceLineNo">037</span><a name="line.37"></a>
+<span class="sourceLineNo">038</span>        /**<a name="line.38"></a>
+<span class="sourceLineNo">039</span>         * inquiry shall be delegated to parent container<a name="line.39"></a>
+<span class="sourceLineNo">040</span>         */<a name="line.40"></a>
+<span class="sourceLineNo">041</span>        @Test public void testThatParentDelegationWorks() {<a name="line.41"></a>
+<span class="sourceLineNo">042</span>                DefaultPicoContainer parent = new DefaultPicoContainer();<a name="line.42"></a>
+<span class="sourceLineNo">043</span>                String stored = new String("glam");<a name="line.43"></a>
+<span class="sourceLineNo">044</span>                parent.addComponent("glam",stored);<a name="line.44"></a>
+<span class="sourceLineNo">045</span><a name="line.45"></a>
+<span class="sourceLineNo">046</span>                PropertiesPicoContainer contaienr = new PropertiesPicoContainer(new Properties(),parent);<a name="line.46"></a>
+<span class="sourceLineNo">047</span><a name="line.47"></a>
+<span class="sourceLineNo">048</span>                assertSame(stored,contaienr.getComponent("glam"));<a name="line.48"></a>
+<span class="sourceLineNo">049</span>        }<a name="line.49"></a>
+<span class="sourceLineNo">050</span><a name="line.50"></a>
+<span class="sourceLineNo">051</span><a name="line.51"></a>
+<span class="sourceLineNo">052</span>    @Test public void thatParanamerBehavesForASpecialCase() {<a name="line.52"></a>
+<span class="sourceLineNo">053</span><a name="line.53"></a>
+<span class="sourceLineNo">054</span>       Properties properties = new Properties();<a name="line.54"></a>
+<span class="sourceLineNo">055</span>       properties.put("portNumber", 1);<a name="line.55"></a>
+<span class="sourceLineNo">056</span>       properties.put("hostName", "string");<a name="line.56"></a>
+<span class="sourceLineNo">057</span>       properties.put("agentName", "agent0");<a name="line.57"></a>
+<span class="sourceLineNo">058</span>       DefaultPicoContainer container = new DefaultPicoContainer(new PropertiesPicoContainer(properties));<a name="line.58"></a>
+<span class="sourceLineNo">059</span>       container.as(Characteristics.USE_NAMES).addComponent(Dependant.class);<a name="line.59"></a>
+<span class="sourceLineNo">060</span>       container.as(Characteristics.USE_NAMES).addComponent(Dependency.class);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>       Dependant dependant = container.getComponent(Dependant.class);<a name="line.61"></a>
+<span class="sourceLineNo">062</span>       assertEquals(1, dependant.pn);<a name="line.62"></a>
+<span class="sourceLineNo">063</span>       assertEquals("string", dependant.hn);<a name="line.63"></a>
+<span class="sourceLineNo">064</span><a name="line.64"></a>
+<span class="sourceLineNo">065</span>   }<a name="line.65"></a>
+<span class="sourceLineNo">066</span><a name="line.66"></a>
+<span class="sourceLineNo">067</span>    public static class Dependency {<a name="line.67"></a>
+<span class="sourceLineNo">068</span>        private final String name;<a name="line.68"></a>
+<span class="sourceLineNo">069</span><a name="line.69"></a>
+<span class="sourceLineNo">070</span>        public Dependency(final String agentName) {<a name="line.70"></a>
+<span class="sourceLineNo">071</span>            this.name = agentName;<a name="line.71"></a>
+<span class="sourceLineNo">072</span>        }<a name="line.72"></a>
+<span class="sourceLineNo">073</span><a name="line.73"></a>
+<span class="sourceLineNo">074</span>        @Override<a name="line.74"></a>
+<span class="sourceLineNo">075</span>                public String toString() {<a name="line.75"></a>
+<span class="sourceLineNo">076</span>            return name;<a name="line.76"></a>
+<span class="sourceLineNo">077</span>        }<a name="line.77"></a>
+<span class="sourceLineNo">078</span>    }<a name="line.78"></a>
+<span class="sourceLineNo">079</span><a name="line.79"></a>
+<span class="sourceLineNo">080</span>    public static class Dependant {<a name="line.80"></a>
+<span class="sourceLineNo">081</span>        final int pn;<a name="line.81"></a>
+<span class="sourceLineNo">082</span>        final String hn;<a name="line.82"></a>
+<span class="sourceLineNo">083</span>        final Dependency dependency;<a name="line.83"></a>
+<span class="sourceLineNo">084</span><a name="line.84"></a>
+<span class="sourceLineNo">085</span>        public Dependant(final String hostName, final int portNumber, final Dependency dependency) {<a name="line.85"></a>
+<span class="sourceLineNo">086</span>            this.pn = portNumber;<a name="line.86"></a>
+<span class="sourceLineNo">087</span>            this.hn = hostName;<a name="line.87"></a>
+<span class="sourceLineNo">088</span>            this.dependency = dependency;<a name="line.88"></a>
+<span class="sourceLineNo">089</span>        }<a name="line.89"></a>
+<span class="sourceLineNo">090</span><a name="line.90"></a>
+<span class="sourceLineNo">091</span>        @Override<a name="line.91"></a>
+<span class="sourceLineNo">092</span>                public String toString() {<a name="line.92"></a>
+<span class="sourceLineNo">093</span>            return "Number: " + pn + " String: " + hn + " Dependency: " + dependency;<a name="line.93"></a>
+<span class="sourceLineNo">094</span>        }<a name="line.94"></a>
+<span class="sourceLineNo">095</span>    }<a name="line.95"></a>
+<span class="sourceLineNo">096</span><a name="line.96"></a>
+<span class="sourceLineNo">097</span>    @Test<a name="line.97"></a>
+<span class="sourceLineNo">098</span>    public void thatParanamerHonorsNamedAnnotationFromJSR330() {<a name="line.98"></a>
+<span class="sourceLineNo">099</span><a name="line.99"></a>
+<span class="sourceLineNo">100</span>       Properties properties = new Properties();<a name="line.100"></a>
+<span class="sourceLineNo">101</span>       properties.put("portNumber", "1");<a name="line.101"></a>
+<span class="sourceLineNo">102</span>       properties.put("hostName", "string");<a name="line.102"></a>
+<span class="sourceLineNo">103</span>       properties.put("agentName", "agent0");<a name="line.103"></a>
+<span class="sourceLineNo">104</span>       DefaultPicoContainer container = new DefaultPicoContainer(new PropertiesPicoContainer(properties));<a name="line.104"></a>
+<span class="sourceLineNo">105</span>       container.as(Characteristics.USE_NAMES).addComponent(Dependant2.class);<a name="line.105"></a>
+<span class="sourceLineNo">106</span>       container.as(Characteristics.USE_NAMES).addComponent(Dependency.class);<a name="line.106"></a>
+<span class="sourceLineNo">107</span>       Dependant2 dependant = container.getComponent(Dependant2.class);<a name="line.107"></a>
+<span class="sourceLineNo">108</span>       assertEquals(1, dependant.pn);<a name="line.108"></a>
+<span class="sourceLineNo">109</span>       assertEquals("string", dependant.hn);<a name="line.109"></a>
+<span class="sourceLineNo">110</span>   }<a name="line.110"></a>
+<span class="sourceLineNo">111</span><a name="line.111"></a>
+<span class="sourceLineNo">112</span><a name="line.112"></a>
+<span class="sourceLineNo">113</span>    public static class Dependant2 extends Dependant {<a name="line.113"></a>
+<span class="sourceLineNo">114</span>        public Dependant2(@Named("hostName") final String hn, @Named("portNumber") final String pn, final Dependency d) {<a name="line.114"></a>
+<span class="sourceLineNo">115</span>            super(hn, Integer.parseInt(pn), d);<a name="line.115"></a>
+<span class="sourceLineNo">116</span>        }<a name="line.116"></a>
+<span class="sourceLineNo">117</span>    }<a name="line.117"></a>
+<span class="sourceLineNo">118</span><a name="line.118"></a>
+<span class="sourceLineNo">119</span>    @Test public void testRepresentationOfContainerTree() {<a name="line.119"></a>
+<span class="sourceLineNo">120</span>        Properties properties = new Properties();<a name="line.120"></a>
+<span class="sourceLineNo">121</span>        properties.put("portNumber", 1);<a name="line.121"></a>
+<span class="sourceLineNo">122</span>        properties.put("hostName", "string");<a name="line.122"></a>
+<span class="sourceLineNo">123</span>        properties.put("agentName", "agent0");<a name="line.123"></a>
+<span class="sourceLineNo">124</span><a name="line.124"></a>
+<span class="sourceLineNo">125</span>        PropertiesPicoContainer parent = new PropertiesPicoContainer(properties);<a name="line.125"></a>
+<span class="sourceLineNo">126</span>        parent.setName("parent");<a name="line.126"></a>
+<span class="sourceLineNo">127</span>        DefaultPicoContainer child = new DefaultPicoContainer(parent);<a name="line.127"></a>
+<span class="sourceLineNo">128</span>        child.setName("child");<a name="line.128"></a>
+<span class="sourceLineNo">129</span>                child.addComponent("hello", "goodbye");<a name="line.129"></a>
+<span class="sourceLineNo">130</span>        child.addComponent("bonjour", "aurevior");<a name="line.130"></a>
+<span class="sourceLineNo">131</span>        assertEquals("child:2&lt;[Immutable]:[Properties]:parent:3&lt;|", child.toString());<a name="line.131"></a>
+<span class="sourceLineNo">132</span>    }<a name="line.132"></a>
+<span class="sourceLineNo">133</span><a name="line.133"></a>
+<span class="sourceLineNo">134</span><a name="line.134"></a>
+<span class="sourceLineNo">135</span>}<a name="line.135"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

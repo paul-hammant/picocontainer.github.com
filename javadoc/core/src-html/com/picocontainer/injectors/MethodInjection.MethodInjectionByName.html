@@ -1,0 +1,503 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*****************************************************************************<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Copyright (C) 2003-2011 PicoContainer Committers. All rights reserved.    *<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * ------------------------------------------------------------------------- *<a name="line.3"></a>
+<span class="sourceLineNo">004</span> * The software in this package is published under the terms of the BSD      *<a name="line.4"></a>
+<span class="sourceLineNo">005</span> * style license a copy of which has been included with this distribution in *<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * the LICENSE.txt file.                                                     *<a name="line.6"></a>
+<span class="sourceLineNo">007</span> *                                                                           *<a name="line.7"></a>
+<span class="sourceLineNo">008</span> * Idea by Rachel Davies, Original code by Aslak Hellesoy and Paul Hammant   *<a name="line.8"></a>
+<span class="sourceLineNo">009</span> *****************************************************************************/<a name="line.9"></a>
+<span class="sourceLineNo">010</span>package com.picocontainer.injectors;<a name="line.10"></a>
+<span class="sourceLineNo">011</span><a name="line.11"></a>
+<span class="sourceLineNo">012</span>import java.lang.annotation.Annotation;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import java.lang.reflect.AccessibleObject;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import java.lang.reflect.InvocationTargetException;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import java.lang.reflect.Member;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import java.lang.reflect.Method;<a name="line.16"></a>
+<span class="sourceLineNo">017</span>import java.lang.reflect.Type;<a name="line.17"></a>
+<span class="sourceLineNo">018</span>import java.util.ArrayList;<a name="line.18"></a>
+<span class="sourceLineNo">019</span>import java.util.Collections;<a name="line.19"></a>
+<span class="sourceLineNo">020</span>import java.util.HashMap;<a name="line.20"></a>
+<span class="sourceLineNo">021</span>import java.util.HashSet;<a name="line.21"></a>
+<span class="sourceLineNo">022</span>import java.util.List;<a name="line.22"></a>
+<span class="sourceLineNo">023</span>import java.util.Properties;<a name="line.23"></a>
+<span class="sourceLineNo">024</span>import java.util.Set;<a name="line.24"></a>
+<span class="sourceLineNo">025</span><a name="line.25"></a>
+<span class="sourceLineNo">026</span>import com.picocontainer.Characteristics;<a name="line.26"></a>
+<span class="sourceLineNo">027</span>import com.picocontainer.ComponentAdapter;<a name="line.27"></a>
+<span class="sourceLineNo">028</span>import com.picocontainer.ComponentMonitor;<a name="line.28"></a>
+<span class="sourceLineNo">029</span>import com.picocontainer.LifecycleStrategy;<a name="line.29"></a>
+<span class="sourceLineNo">030</span>import com.picocontainer.Parameter;<a name="line.30"></a>
+<span class="sourceLineNo">031</span>import com.picocontainer.PicoCompositionException;<a name="line.31"></a>
+<span class="sourceLineNo">032</span>import com.picocontainer.PicoContainer;<a name="line.32"></a>
+<span class="sourceLineNo">033</span>import com.picocontainer.annotations.Nullable;<a name="line.33"></a>
+<span class="sourceLineNo">034</span>import com.picocontainer.behaviors.AbstractBehavior;<a name="line.34"></a>
+<span class="sourceLineNo">035</span>import com.picocontainer.parameters.AccessibleObjectParameterSet;<a name="line.35"></a>
+<span class="sourceLineNo">036</span>import com.picocontainer.parameters.ConstructorParameters;<a name="line.36"></a>
+<span class="sourceLineNo">037</span>import com.picocontainer.parameters.FieldParameters;<a name="line.37"></a>
+<span class="sourceLineNo">038</span>import com.picocontainer.parameters.MethodParameters;<a name="line.38"></a>
+<span class="sourceLineNo">039</span><a name="line.39"></a>
+<span class="sourceLineNo">040</span>/**<a name="line.40"></a>
+<span class="sourceLineNo">041</span> * A {@link com.picocontainer.InjectionType} for methods.<a name="line.41"></a>
+<span class="sourceLineNo">042</span> * The factory creates {@link MethodInjector}.<a name="line.42"></a>
+<span class="sourceLineNo">043</span> *<a name="line.43"></a>
+<span class="sourceLineNo">044</span> *  @author Paul Hammant<a name="line.44"></a>
+<span class="sourceLineNo">045</span> */<a name="line.45"></a>
+<span class="sourceLineNo">046</span>@SuppressWarnings("serial")<a name="line.46"></a>
+<span class="sourceLineNo">047</span>public class MethodInjection extends AbstractInjectionType {<a name="line.47"></a>
+<span class="sourceLineNo">048</span><a name="line.48"></a>
+<span class="sourceLineNo">049</span>    private final AbstractInjectionType delegate;<a name="line.49"></a>
+<span class="sourceLineNo">050</span><a name="line.50"></a>
+<span class="sourceLineNo">051</span>    public MethodInjection(final String injectionMethodName) {<a name="line.51"></a>
+<span class="sourceLineNo">052</span>        delegate = new MethodInjectionByName(injectionMethodName);<a name="line.52"></a>
+<span class="sourceLineNo">053</span>    }<a name="line.53"></a>
+<span class="sourceLineNo">054</span><a name="line.54"></a>
+<span class="sourceLineNo">055</span>    public MethodInjection() {<a name="line.55"></a>
+<span class="sourceLineNo">056</span>        this("inject");<a name="line.56"></a>
+<span class="sourceLineNo">057</span>    }<a name="line.57"></a>
+<span class="sourceLineNo">058</span><a name="line.58"></a>
+<span class="sourceLineNo">059</span>    public MethodInjection(final Method injectionMethod) {<a name="line.59"></a>
+<span class="sourceLineNo">060</span>        delegate = new MethodInjectionByReflectionMethod(injectionMethod);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>    }<a name="line.61"></a>
+<span class="sourceLineNo">062</span><a name="line.62"></a>
+<span class="sourceLineNo">063</span>    public &lt;T&gt; ComponentAdapter&lt;T&gt; createComponentAdapter(final ComponentMonitor monitor, final LifecycleStrategy lifecycle, final Properties componentProps, final Object key,<a name="line.63"></a>
+<span class="sourceLineNo">064</span>                                                   final Class&lt;T&gt; impl, final ConstructorParameters constructorParams, final FieldParameters[] fieldParams, final MethodParameters[] methodParams) throws PicoCompositionException {<a name="line.64"></a>
+<span class="sourceLineNo">065</span>        return delegate.createComponentAdapter(monitor, lifecycle, componentProps, key, impl, constructorParams, fieldParams, methodParams);<a name="line.65"></a>
+<span class="sourceLineNo">066</span>    }<a name="line.66"></a>
+<span class="sourceLineNo">067</span><a name="line.67"></a>
+<span class="sourceLineNo">068</span>    public class MethodInjectionByName extends AbstractInjectionType {<a name="line.68"></a>
+<span class="sourceLineNo">069</span>        private final String injectionMethodName;<a name="line.69"></a>
+<span class="sourceLineNo">070</span><a name="line.70"></a>
+<span class="sourceLineNo">071</span>        public MethodInjectionByName(final String injectionMethodName) {<a name="line.71"></a>
+<span class="sourceLineNo">072</span>            this.injectionMethodName = injectionMethodName;<a name="line.72"></a>
+<span class="sourceLineNo">073</span>        }<a name="line.73"></a>
+<span class="sourceLineNo">074</span><a name="line.74"></a>
+<span class="sourceLineNo">075</span>        public &lt;T&gt; ComponentAdapter&lt;T&gt; createComponentAdapter(final ComponentMonitor monitor, final LifecycleStrategy lifecycle, final Properties componentProps, final Object key, final Class&lt;T&gt; impl, final ConstructorParameters constructorParams, final FieldParameters[] fieldParams, final MethodParameters[] methodParams) throws PicoCompositionException {<a name="line.75"></a>
+<span class="sourceLineNo">076</span>            boolean useNames = AbstractBehavior.arePropertiesPresent(componentProps, Characteristics.USE_NAMES, true);<a name="line.76"></a>
+<span class="sourceLineNo">077</span>            boolean requireConsumptionOfAllParameters = !(AbstractBehavior.arePropertiesPresent(componentProps, Characteristics.ALLOW_UNUSED_PARAMETERS, false));<a name="line.77"></a>
+<span class="sourceLineNo">078</span>            return wrapLifeCycle(new MethodInjector(key, impl, monitor, injectionMethodName, useNames, requireConsumptionOfAllParameters, methodParams), lifecycle);<a name="line.78"></a>
+<span class="sourceLineNo">079</span>        }<a name="line.79"></a>
+<span class="sourceLineNo">080</span>    }<a name="line.80"></a>
+<span class="sourceLineNo">081</span><a name="line.81"></a>
+<span class="sourceLineNo">082</span>    public class MethodInjectionByReflectionMethod extends AbstractInjectionType {<a name="line.82"></a>
+<span class="sourceLineNo">083</span>        private final Method injectionMethod;<a name="line.83"></a>
+<span class="sourceLineNo">084</span><a name="line.84"></a>
+<span class="sourceLineNo">085</span>        public MethodInjectionByReflectionMethod(final Method injectionMethod) {<a name="line.85"></a>
+<span class="sourceLineNo">086</span>            this.injectionMethod = injectionMethod;<a name="line.86"></a>
+<span class="sourceLineNo">087</span>        }<a name="line.87"></a>
+<span class="sourceLineNo">088</span><a name="line.88"></a>
+<span class="sourceLineNo">089</span>        public &lt;T&gt; ComponentAdapter&lt;T&gt; createComponentAdapter(final ComponentMonitor monitor, final LifecycleStrategy lifecycle, final Properties componentProps, final Object key, final Class&lt;T&gt; impl, final ConstructorParameters constructorParams, final FieldParameters[] fieldParams, final MethodParameters[] methodParams) throws PicoCompositionException {<a name="line.89"></a>
+<span class="sourceLineNo">090</span>            boolean useNames = AbstractBehavior.arePropertiesPresent(componentProps, Characteristics.USE_NAMES, true);<a name="line.90"></a>
+<span class="sourceLineNo">091</span>            boolean requireConsumptionOfAllParameters = !(AbstractBehavior.arePropertiesPresent(componentProps, Characteristics.ALLOW_UNUSED_PARAMETERS, false));<a name="line.91"></a>
+<span class="sourceLineNo">092</span><a name="line.92"></a>
+<span class="sourceLineNo">093</span>            if (injectionMethod.getDeclaringClass().isAssignableFrom(impl)) {<a name="line.93"></a>
+<span class="sourceLineNo">094</span>                return wrapLifeCycle(monitor.newInjector(new SpecificMethodInjector(key, impl, monitor, useNames, requireConsumptionOfAllParameters, methodParams, injectionMethod)), lifecycle);<a name="line.94"></a>
+<span class="sourceLineNo">095</span>            } else {<a name="line.95"></a>
+<span class="sourceLineNo">096</span>                throw new PicoCompositionException("method [" + injectionMethod + "] not on impl " + impl.getName());<a name="line.96"></a>
+<span class="sourceLineNo">097</span>            }<a name="line.97"></a>
+<span class="sourceLineNo">098</span>        }<a name="line.98"></a>
+<span class="sourceLineNo">099</span>    }<a name="line.99"></a>
+<span class="sourceLineNo">100</span><a name="line.100"></a>
+<span class="sourceLineNo">101</span>    /**<a name="line.101"></a>
+<span class="sourceLineNo">102</span>     * Injection will happen through a single method for the component.<a name="line.102"></a>
+<span class="sourceLineNo">103</span>     *<a name="line.103"></a>
+<span class="sourceLineNo">104</span>     * Most likely it is a method called 'inject', though that can be overridden.<a name="line.104"></a>
+<span class="sourceLineNo">105</span>     *<a name="line.105"></a>
+<span class="sourceLineNo">106</span>     * @author Paul Hammant<a name="line.106"></a>
+<span class="sourceLineNo">107</span>     * @author Aslak Helles&amp;oslash;y<a name="line.107"></a>
+<span class="sourceLineNo">108</span>     * @author Jon Tirs&amp;eacute;n<a name="line.108"></a>
+<span class="sourceLineNo">109</span>     * @author Zohar Melamed<a name="line.109"></a>
+<span class="sourceLineNo">110</span>     * @author J&amp;ouml;rg Schaible<a name="line.110"></a>
+<span class="sourceLineNo">111</span>     * @author Mauro Talevi<a name="line.111"></a>
+<span class="sourceLineNo">112</span>     */<a name="line.112"></a>
+<span class="sourceLineNo">113</span>    public static class MethodInjector&lt;T&gt; extends MultiArgMemberInjector&lt;T&gt; {<a name="line.113"></a>
+<span class="sourceLineNo">114</span>        private transient ThreadLocalCyclicDependencyGuard&lt;Object&gt; instantiationGuard;<a name="line.114"></a>
+<span class="sourceLineNo">115</span>        private final String methodNamePrefix;<a name="line.115"></a>
+<span class="sourceLineNo">116</span><a name="line.116"></a>
+<span class="sourceLineNo">117</span>        /**<a name="line.117"></a>
+<span class="sourceLineNo">118</span>         * Creates a MethodInjector<a name="line.118"></a>
+<span class="sourceLineNo">119</span>         *<a name="line.119"></a>
+<span class="sourceLineNo">120</span>         * @param key            the search key for this implementation<a name="line.120"></a>
+<span class="sourceLineNo">121</span>         * @param impl the concrete implementation<a name="line.121"></a>
+<span class="sourceLineNo">122</span>         * @param monitor                 the component monitor used by this addAdapter<a name="line.122"></a>
+<span class="sourceLineNo">123</span>         * @param methodName              the method name<a name="line.123"></a>
+<span class="sourceLineNo">124</span>         * @param useNames                use argument names when looking up dependencies<a name="line.124"></a>
+<span class="sourceLineNo">125</span>         * @param parameters              the parameters to use for the initialization<a name="line.125"></a>
+<span class="sourceLineNo">126</span>         * @throws com.picocontainer.injectors.AbstractInjector.NotConcreteRegistrationException<a name="line.126"></a>
+<span class="sourceLineNo">127</span>         *                              if the implementation is not a concrete class.<a name="line.127"></a>
+<span class="sourceLineNo">128</span>         * @throws NullPointerException if one of the parameters is &lt;code&gt;null&lt;/code&gt;<a name="line.128"></a>
+<span class="sourceLineNo">129</span>         */<a name="line.129"></a>
+<span class="sourceLineNo">130</span>        public MethodInjector(final Object key, final Class&lt;T&gt; impl,<a name="line.130"></a>
+<span class="sourceLineNo">131</span>                                                final ComponentMonitor monitor, final String methodName,<a name="line.131"></a>
+<span class="sourceLineNo">132</span>                                                final boolean useNames, final boolean useAllParameters,<a name="line.132"></a>
+<span class="sourceLineNo">133</span>                              final MethodParameters... parameters) throws NotConcreteRegistrationException {<a name="line.133"></a>
+<span class="sourceLineNo">134</span>            super(key, impl, parameters, monitor, useNames, useAllParameters);<a name="line.134"></a>
+<span class="sourceLineNo">135</span>            this.methodNamePrefix = methodName;<a name="line.135"></a>
+<span class="sourceLineNo">136</span>        }<a name="line.136"></a>
+<span class="sourceLineNo">137</span><a name="line.137"></a>
+<span class="sourceLineNo">138</span><a name="line.138"></a>
+<span class="sourceLineNo">139</span><a name="line.139"></a>
+<span class="sourceLineNo">140</span>        protected List&lt;Method&gt; getInjectorMethods() {<a name="line.140"></a>
+<span class="sourceLineNo">141</span>                Class&lt;?&gt; toIntrospect = null;<a name="line.141"></a>
+<span class="sourceLineNo">142</span>            //Method[] methods = new Method[0];<a name="line.142"></a>
+<span class="sourceLineNo">143</span>            try {<a name="line.143"></a>
+<span class="sourceLineNo">144</span>                //methods = super.getComponentImplementation().getMethods();<a name="line.144"></a>
+<span class="sourceLineNo">145</span>                toIntrospect = super.getComponentImplementation();<a name="line.145"></a>
+<span class="sourceLineNo">146</span>            } catch (AmbiguousComponentResolutionException e) {<a name="line.146"></a>
+<span class="sourceLineNo">147</span>                e.setComponent(getComponentImplementation());<a name="line.147"></a>
+<span class="sourceLineNo">148</span>                throw e;<a name="line.148"></a>
+<span class="sourceLineNo">149</span>            }<a name="line.149"></a>
+<span class="sourceLineNo">150</span><a name="line.150"></a>
+<span class="sourceLineNo">151</span>            if (toIntrospect == null) {<a name="line.151"></a>
+<span class="sourceLineNo">152</span>                throw new NullPointerException("No implementation class defined for " + this);<a name="line.152"></a>
+<span class="sourceLineNo">153</span>            }<a name="line.153"></a>
+<span class="sourceLineNo">154</span><a name="line.154"></a>
+<span class="sourceLineNo">155</span><a name="line.155"></a>
+<span class="sourceLineNo">156</span>            HashMap&lt;String, Set&lt;Method&gt;&gt; allMethodsAnalyzed = new HashMap&lt;String,Set&lt;Method&gt;&gt;();<a name="line.156"></a>
+<span class="sourceLineNo">157</span>            List&lt;Method&gt; methodz = new ArrayList&lt;Method&gt;();<a name="line.157"></a>
+<span class="sourceLineNo">158</span>            recursiveCheckInjectorMethods(toIntrospect, toIntrospect, methodz, allMethodsAnalyzed);<a name="line.158"></a>
+<span class="sourceLineNo">159</span><a name="line.159"></a>
+<span class="sourceLineNo">160</span>            //Inject in JSR330 compliant order.<a name="line.160"></a>
+<span class="sourceLineNo">161</span>            Collections.sort(methodz, new JSRAccessibleObjectOrderComparator());<a name="line.161"></a>
+<span class="sourceLineNo">162</span><a name="line.162"></a>
+<span class="sourceLineNo">163</span>            return methodz;<a name="line.163"></a>
+<span class="sourceLineNo">164</span>        }<a name="line.164"></a>
+<span class="sourceLineNo">165</span><a name="line.165"></a>
+<span class="sourceLineNo">166</span>        /**<a name="line.166"></a>
+<span class="sourceLineNo">167</span>         * Goes through all methods (including private base classes) to look for potential injection methods.<a name="line.167"></a>
+<span class="sourceLineNo">168</span>         * @param originalType<a name="line.168"></a>
+<span class="sourceLineNo">169</span>         * @param type<a name="line.169"></a>
+<span class="sourceLineNo">170</span>         * @param receiver<a name="line.170"></a>
+<span class="sourceLineNo">171</span>         * @param allMethodsAnalyzed<a name="line.171"></a>
+<span class="sourceLineNo">172</span>         */<a name="line.172"></a>
+<span class="sourceLineNo">173</span>        protected void recursiveCheckInjectorMethods(final Class&lt;?&gt; originalType, final Class&lt;?&gt; type, final List&lt;Method&gt; receiver, final HashMap&lt;String, Set&lt;Method&gt;&gt; allMethodsAnalyzed) {<a name="line.173"></a>
+<span class="sourceLineNo">174</span>                if (type.isAssignableFrom(Object.class)) {<a name="line.174"></a>
+<span class="sourceLineNo">175</span>                        return;<a name="line.175"></a>
+<span class="sourceLineNo">176</span>                }<a name="line.176"></a>
+<span class="sourceLineNo">177</span><a name="line.177"></a>
+<span class="sourceLineNo">178</span>                for (Method eachMethod : type.getDeclaredMethods()) {<a name="line.178"></a>
+<span class="sourceLineNo">179</span>                        if(alreadyAnalyzedChildClassMethod(eachMethod, allMethodsAnalyzed)) {<a name="line.179"></a>
+<span class="sourceLineNo">180</span>                                //This method was defined in a child class, what the child class says, goes.<a name="line.180"></a>
+<span class="sourceLineNo">181</span>                                continue;<a name="line.181"></a>
+<span class="sourceLineNo">182</span>                        }<a name="line.182"></a>
+<span class="sourceLineNo">183</span><a name="line.183"></a>
+<span class="sourceLineNo">184</span>                        addToMethodsAnalyzed(allMethodsAnalyzed, eachMethod);<a name="line.184"></a>
+<span class="sourceLineNo">185</span><a name="line.185"></a>
+<span class="sourceLineNo">186</span>                        if (isInjectorMethod(originalType, eachMethod)) {<a name="line.186"></a>
+<span class="sourceLineNo">187</span>                                receiver.add(eachMethod);<a name="line.187"></a>
+<span class="sourceLineNo">188</span>                        }<a name="line.188"></a>
+<span class="sourceLineNo">189</span>                }<a name="line.189"></a>
+<span class="sourceLineNo">190</span><a name="line.190"></a>
+<span class="sourceLineNo">191</span>                recursiveCheckInjectorMethods(originalType, type.getSuperclass(), receiver, allMethodsAnalyzed);<a name="line.191"></a>
+<span class="sourceLineNo">192</span>        }<a name="line.192"></a>
+<span class="sourceLineNo">193</span><a name="line.193"></a>
+<span class="sourceLineNo">194</span><a name="line.194"></a>
+<span class="sourceLineNo">195</span>        private void addToMethodsAnalyzed(final HashMap&lt;String, Set&lt;Method&gt;&gt; allMethodsAnalyzed, final Method eachMethod) {<a name="line.195"></a>
+<span class="sourceLineNo">196</span>                if (!allMethodsAnalyzed.containsKey(eachMethod.getName())) {<a name="line.196"></a>
+<span class="sourceLineNo">197</span>                        allMethodsAnalyzed.put(eachMethod.getName(), new HashSet&lt;Method&gt;());<a name="line.197"></a>
+<span class="sourceLineNo">198</span>                }<a name="line.198"></a>
+<span class="sourceLineNo">199</span><a name="line.199"></a>
+<span class="sourceLineNo">200</span>                allMethodsAnalyzed.get(eachMethod.getName()).add(eachMethod);<a name="line.200"></a>
+<span class="sourceLineNo">201</span>                }<a name="line.201"></a>
+<span class="sourceLineNo">202</span><a name="line.202"></a>
+<span class="sourceLineNo">203</span>                private boolean alreadyAnalyzedChildClassMethod(final Method eachMethod,<a name="line.203"></a>
+<span class="sourceLineNo">204</span>                                final HashMap&lt;String, Set&lt;Method&gt;&gt; allMethodsAnalyzed) {<a name="line.204"></a>
+<span class="sourceLineNo">205</span><a name="line.205"></a>
+<span class="sourceLineNo">206</span>                        Set&lt;Method&gt; methodsByName = allMethodsAnalyzed.get(eachMethod.getName());<a name="line.206"></a>
+<span class="sourceLineNo">207</span>                        if (methodsByName == null) {<a name="line.207"></a>
+<span class="sourceLineNo">208</span>                                return false;<a name="line.208"></a>
+<span class="sourceLineNo">209</span>                        }<a name="line.209"></a>
+<span class="sourceLineNo">210</span><a name="line.210"></a>
+<span class="sourceLineNo">211</span>                        return false;<a name="line.211"></a>
+<span class="sourceLineNo">212</span>                }<a name="line.212"></a>
+<span class="sourceLineNo">213</span><a name="line.213"></a>
+<span class="sourceLineNo">214</span>                protected boolean isInjectorMethod(final Class&lt;?&gt; originalType, final Method method) {<a name="line.214"></a>
+<span class="sourceLineNo">215</span>            return method.getName().startsWith(methodNamePrefix);<a name="line.215"></a>
+<span class="sourceLineNo">216</span>        }<a name="line.216"></a>
+<span class="sourceLineNo">217</span><a name="line.217"></a>
+<span class="sourceLineNo">218</span>                @Override<a name="line.218"></a>
+<span class="sourceLineNo">219</span>        @SuppressWarnings("unchecked")<a name="line.219"></a>
+<span class="sourceLineNo">220</span>        public T getComponentInstance(final PicoContainer container, final Type into) throws PicoCompositionException {<a name="line.220"></a>
+<span class="sourceLineNo">221</span>                boolean i_Instantiated = false;<a name="line.221"></a>
+<span class="sourceLineNo">222</span>                T result;<a name="line.222"></a>
+<span class="sourceLineNo">223</span>                try {<a name="line.223"></a>
+<span class="sourceLineNo">224</span>                    if (instantiationGuard == null) {<a name="line.224"></a>
+<span class="sourceLineNo">225</span>                        i_Instantiated = true;<a name="line.225"></a>
+<span class="sourceLineNo">226</span>                        instantiationGuard = new ThreadLocalCyclicDependencyGuard&lt;Object&gt;() {<a name="line.226"></a>
+<span class="sourceLineNo">227</span>                            @Override<a name="line.227"></a>
+<span class="sourceLineNo">228</span>                            @SuppressWarnings("synthetic-access")<a name="line.228"></a>
+<span class="sourceLineNo">229</span>                            public Object run(final Object instance) {<a name="line.229"></a>
+<span class="sourceLineNo">230</span>                                List&lt;Method&gt; methods = getInjectorMethods();<a name="line.230"></a>
+<span class="sourceLineNo">231</span>                                T inst = null;<a name="line.231"></a>
+<span class="sourceLineNo">232</span>                                ComponentMonitor monitor = currentMonitor();<a name="line.232"></a>
+<span class="sourceLineNo">233</span>                                Method lastMethod = null;<a name="line.233"></a>
+<span class="sourceLineNo">234</span>                                try {<a name="line.234"></a>
+<span class="sourceLineNo">235</span>                                    monitor.instantiating(container, MethodInjector.this, null);<a name="line.235"></a>
+<span class="sourceLineNo">236</span>                                    long startTime = System.currentTimeMillis();<a name="line.236"></a>
+<span class="sourceLineNo">237</span>                                    Object[] methodParameters = null;<a name="line.237"></a>
+<span class="sourceLineNo">238</span>                                    inst = getComponentImplementation().newInstance();<a name="line.238"></a>
+<span class="sourceLineNo">239</span>                                    for (Method method : methods) {<a name="line.239"></a>
+<span class="sourceLineNo">240</span>                                        lastMethod = method;<a name="line.240"></a>
+<span class="sourceLineNo">241</span>                                        methodParameters = getMemberArguments(guardedContainer, method, into);<a name="line.241"></a>
+<span class="sourceLineNo">242</span>                                        invokeMethod(method, methodParameters, inst, container);<a name="line.242"></a>
+<span class="sourceLineNo">243</span>                                    }<a name="line.243"></a>
+<span class="sourceLineNo">244</span>                                    monitor.instantiated(container, MethodInjector.this,<a name="line.244"></a>
+<span class="sourceLineNo">245</span>                                                                  null, inst, methodParameters, System.currentTimeMillis() - startTime);<a name="line.245"></a>
+<span class="sourceLineNo">246</span>                                    return inst;<a name="line.246"></a>
+<span class="sourceLineNo">247</span>                                } catch (InstantiationException e) {<a name="line.247"></a>
+<span class="sourceLineNo">248</span>                                    return caughtInstantiationException(monitor, null, e, container);<a name="line.248"></a>
+<span class="sourceLineNo">249</span>                                } catch (IllegalAccessException e) {<a name="line.249"></a>
+<span class="sourceLineNo">250</span>                                    return caughtIllegalAccessException(monitor, lastMethod, inst, e);<a name="line.250"></a>
+<span class="sourceLineNo">251</span><a name="line.251"></a>
+<span class="sourceLineNo">252</span>                                }<a name="line.252"></a>
+<span class="sourceLineNo">253</span>                            }<a name="line.253"></a>
+<span class="sourceLineNo">254</span>                        };<a name="line.254"></a>
+<span class="sourceLineNo">255</span>                    }<a name="line.255"></a>
+<span class="sourceLineNo">256</span>                    instantiationGuard.setGuardedContainer(container);<a name="line.256"></a>
+<span class="sourceLineNo">257</span>                    result =  (T) instantiationGuard.observe(getComponentImplementation(), null);<a name="line.257"></a>
+<span class="sourceLineNo">258</span>                } finally {<a name="line.258"></a>
+<span class="sourceLineNo">259</span>                    if (i_Instantiated) {<a name="line.259"></a>
+<span class="sourceLineNo">260</span>                        instantiationGuard.remove();<a name="line.260"></a>
+<span class="sourceLineNo">261</span>                        instantiationGuard = null;<a name="line.261"></a>
+<span class="sourceLineNo">262</span>                    }<a name="line.262"></a>
+<span class="sourceLineNo">263</span>                }<a name="line.263"></a>
+<span class="sourceLineNo">264</span>            return result;<a name="line.264"></a>
+<span class="sourceLineNo">265</span>        }<a name="line.265"></a>
+<span class="sourceLineNo">266</span><a name="line.266"></a>
+<span class="sourceLineNo">267</span>        protected Object[] getMemberArguments(final PicoContainer container, final Method method, final Type into) {<a name="line.267"></a>
+<span class="sourceLineNo">268</span>            return super.getMemberArguments(container, method, method.getGenericParameterTypes(), getBindings(method.getParameterAnnotations()), into);<a name="line.268"></a>
+<span class="sourceLineNo">269</span>        }<a name="line.269"></a>
+<span class="sourceLineNo">270</span><a name="line.270"></a>
+<span class="sourceLineNo">271</span>        @Override<a name="line.271"></a>
+<span class="sourceLineNo">272</span>        public Object decorateComponentInstance(final PicoContainer container, final Type into, final T instance) {<a name="line.272"></a>
+<span class="sourceLineNo">273</span>                return partiallyDecorateComponentInstance(container, into, instance, null);<a name="line.273"></a>
+<span class="sourceLineNo">274</span>        }<a name="line.274"></a>
+<span class="sourceLineNo">275</span><a name="line.275"></a>
+<span class="sourceLineNo">276</span><a name="line.276"></a>
+<span class="sourceLineNo">277</span><a name="line.277"></a>
+<span class="sourceLineNo">278</span>                @Override<a name="line.278"></a>
+<span class="sourceLineNo">279</span>                @SuppressWarnings("unchecked")<a name="line.279"></a>
+<span class="sourceLineNo">280</span>                public Object partiallyDecorateComponentInstance(final PicoContainer container, final Type into, final T instance,<a name="line.280"></a>
+<span class="sourceLineNo">281</span>                                final Class&lt;?&gt; injectionTypeFilter) {<a name="line.281"></a>
+<span class="sourceLineNo">282</span>                        boolean iInstantiated = false;<a name="line.282"></a>
+<span class="sourceLineNo">283</span>                        Object o;<a name="line.283"></a>
+<span class="sourceLineNo">284</span>                        try {<a name="line.284"></a>
+<span class="sourceLineNo">285</span>                    if (instantiationGuard == null) {<a name="line.285"></a>
+<span class="sourceLineNo">286</span>                        iInstantiated = true;<a name="line.286"></a>
+<span class="sourceLineNo">287</span>                        instantiationGuard = new ThreadLocalCyclicDependencyGuard&lt;Object&gt;() {<a name="line.287"></a>
+<span class="sourceLineNo">288</span>                            @Override<a name="line.288"></a>
+<span class="sourceLineNo">289</span>                            @SuppressWarnings("synthetic-access")<a name="line.289"></a>
+<span class="sourceLineNo">290</span>                            public Object run(final Object inst) {<a name="line.290"></a>
+<span class="sourceLineNo">291</span>                                List&lt;Method&gt; methods = getInjectorMethods();<a name="line.291"></a>
+<span class="sourceLineNo">292</span>                                Object lastReturn = null;<a name="line.292"></a>
+<span class="sourceLineNo">293</span>                                for (Method method : methods) {<a name="line.293"></a>
+<span class="sourceLineNo">294</span>                                        Class&lt;?&gt; methodClass = method.getDeclaringClass();<a name="line.294"></a>
+<span class="sourceLineNo">295</span>                                        Class&lt;?&gt; filterClass = injectionTypeFilter;<a name="line.295"></a>
+<span class="sourceLineNo">296</span>                                        if (!allowedMethodBasedOnFilter(filterClass, method)) {<a name="line.296"></a>
+<span class="sourceLineNo">297</span>                                                continue;<a name="line.297"></a>
+<span class="sourceLineNo">298</span>                                        }<a name="line.298"></a>
+<span class="sourceLineNo">299</span><a name="line.299"></a>
+<span class="sourceLineNo">300</span>                                    if (methodClass.isAssignableFrom(inst.getClass())) {<a name="line.300"></a>
+<span class="sourceLineNo">301</span>                                        Object[] methodParameters = getMemberArguments(guardedContainer, method, into);<a name="line.301"></a>
+<span class="sourceLineNo">302</span>                                        lastReturn = invokeMethod(method, methodParameters, (T) inst, container);<a name="line.302"></a>
+<span class="sourceLineNo">303</span>                                    }<a name="line.303"></a>
+<span class="sourceLineNo">304</span>                                }<a name="line.304"></a>
+<span class="sourceLineNo">305</span>                                return lastReturn;<a name="line.305"></a>
+<span class="sourceLineNo">306</span>                            }<a name="line.306"></a>
+<span class="sourceLineNo">307</span><a name="line.307"></a>
+<span class="sourceLineNo">308</span>                        };<a name="line.308"></a>
+<span class="sourceLineNo">309</span>                    }<a name="line.309"></a>
+<span class="sourceLineNo">310</span>                    instantiationGuard.setGuardedContainer(container);<a name="line.310"></a>
+<span class="sourceLineNo">311</span>                    o = instantiationGuard.observe(getComponentImplementation(), instance);<a name="line.311"></a>
+<span class="sourceLineNo">312</span>                        } finally {<a name="line.312"></a>
+<span class="sourceLineNo">313</span>                    if (iInstantiated) {<a name="line.313"></a>
+<span class="sourceLineNo">314</span>                        instantiationGuard.remove();<a name="line.314"></a>
+<span class="sourceLineNo">315</span>                        instantiationGuard = null;<a name="line.315"></a>
+<span class="sourceLineNo">316</span>                    }<a name="line.316"></a>
+<span class="sourceLineNo">317</span>                        }<a name="line.317"></a>
+<span class="sourceLineNo">318</span><a name="line.318"></a>
+<span class="sourceLineNo">319</span>            return o;<a name="line.319"></a>
+<span class="sourceLineNo">320</span>        }<a name="line.320"></a>
+<span class="sourceLineNo">321</span><a name="line.321"></a>
+<span class="sourceLineNo">322</span>                /**<a name="line.322"></a>
+<span class="sourceLineNo">323</span>                 * Method injection filter sometimes decorates based on one or two specific methods.<a name="line.323"></a>
+<span class="sourceLineNo">324</span>                 * Filtering isn't appropriate for those cases, but it is needed for JSR injection.<a name="line.324"></a>
+<span class="sourceLineNo">325</span>                 * @param injectionTypeFilter<a name="line.325"></a>
+<span class="sourceLineNo">326</span>                 * @param method<a name="line.326"></a>
+<span class="sourceLineNo">327</span>                 * @return<a name="line.327"></a>
+<span class="sourceLineNo">328</span>                 */<a name="line.328"></a>
+<span class="sourceLineNo">329</span>                protected boolean allowedMethodBasedOnFilter(final Class&lt;?&gt; injectionTypeFilter, final Method method) {<a name="line.329"></a>
+<span class="sourceLineNo">330</span>                        return true;<a name="line.330"></a>
+<span class="sourceLineNo">331</span>                }<a name="line.331"></a>
+<span class="sourceLineNo">332</span><a name="line.332"></a>
+<span class="sourceLineNo">333</span>        Object invokeMethod(final Method method, final Object[] methodParameters, final T instance, final PicoContainer container) {<a name="line.333"></a>
+<span class="sourceLineNo">334</span>            try {<a name="line.334"></a>
+<span class="sourceLineNo">335</span>                Object rv = currentMonitor().invoking(container, MethodInjector.this, (Member) method, instance, methodParameters);<a name="line.335"></a>
+<span class="sourceLineNo">336</span>                if (rv == ComponentMonitor.KEEP) {<a name="line.336"></a>
+<span class="sourceLineNo">337</span>                    long str = System.currentTimeMillis();<a name="line.337"></a>
+<span class="sourceLineNo">338</span>                    makeAccessibleIfDesired(method);<a name="line.338"></a>
+<span class="sourceLineNo">339</span>                    rv = method.invoke(instance, methodParameters);<a name="line.339"></a>
+<span class="sourceLineNo">340</span>                    currentMonitor().invoked(container, MethodInjector.this, method, instance, System.currentTimeMillis() - str, rv, methodParameters);<a name="line.340"></a>
+<span class="sourceLineNo">341</span>                }<a name="line.341"></a>
+<span class="sourceLineNo">342</span>                return rv;<a name="line.342"></a>
+<span class="sourceLineNo">343</span>            } catch (IllegalAccessException e) {<a name="line.343"></a>
+<span class="sourceLineNo">344</span>                return caughtIllegalAccessException(currentMonitor(), method, instance, e);<a name="line.344"></a>
+<span class="sourceLineNo">345</span>            } catch (InvocationTargetException e) {<a name="line.345"></a>
+<span class="sourceLineNo">346</span>                currentMonitor().invocationFailed(method, instance, e);<a name="line.346"></a>
+<span class="sourceLineNo">347</span>                if (e.getTargetException() instanceof RuntimeException) {<a name="line.347"></a>
+<span class="sourceLineNo">348</span>                    throw (RuntimeException) e.getTargetException();<a name="line.348"></a>
+<span class="sourceLineNo">349</span>                } else if (e.getTargetException() instanceof Error) {<a name="line.349"></a>
+<span class="sourceLineNo">350</span>                    throw (Error) e.getTargetException();<a name="line.350"></a>
+<span class="sourceLineNo">351</span>                }<a name="line.351"></a>
+<span class="sourceLineNo">352</span>                throw new PicoCompositionException(e);<a name="line.352"></a>
+<span class="sourceLineNo">353</span>            }<a name="line.353"></a>
+<span class="sourceLineNo">354</span>        }<a name="line.354"></a>
+<span class="sourceLineNo">355</span><a name="line.355"></a>
+<span class="sourceLineNo">356</span><a name="line.356"></a>
+<span class="sourceLineNo">357</span>        /**<a name="line.357"></a>
+<span class="sourceLineNo">358</span>         * Allow override to make methods accessible as per jsr.<a name="line.358"></a>
+<span class="sourceLineNo">359</span>         * @param method<a name="line.359"></a>
+<span class="sourceLineNo">360</span>         */<a name="line.360"></a>
+<span class="sourceLineNo">361</span>        protected void makeAccessibleIfDesired(final Method method) {<a name="line.361"></a>
+<span class="sourceLineNo">362</span><a name="line.362"></a>
+<span class="sourceLineNo">363</span>        }<a name="line.363"></a>
+<span class="sourceLineNo">364</span><a name="line.364"></a>
+<span class="sourceLineNo">365</span><a name="line.365"></a>
+<span class="sourceLineNo">366</span>                @Override<a name="line.366"></a>
+<span class="sourceLineNo">367</span>                @SuppressWarnings("unchecked")<a name="line.367"></a>
+<span class="sourceLineNo">368</span>        public void verify(final PicoContainer container) throws PicoCompositionException {<a name="line.368"></a>
+<span class="sourceLineNo">369</span>                        boolean i_created = false;<a name="line.369"></a>
+<span class="sourceLineNo">370</span>                        try {<a name="line.370"></a>
+<span class="sourceLineNo">371</span>                    if (verifyingGuard == null) {<a name="line.371"></a>
+<span class="sourceLineNo">372</span>                        i_created = true;<a name="line.372"></a>
+<span class="sourceLineNo">373</span>                        verifyingGuard = new ThreadLocalCyclicDependencyGuard&lt;Void&gt;() {<a name="line.373"></a>
+<span class="sourceLineNo">374</span>                            @Override<a name="line.374"></a>
+<span class="sourceLineNo">375</span>                            public Void run(final Object inst) {<a name="line.375"></a>
+<span class="sourceLineNo">376</span>                                final List&lt;Method&gt; methods = getInjectorMethods();<a name="line.376"></a>
+<span class="sourceLineNo">377</span>                                for (Method method : methods) {<a name="line.377"></a>
+<span class="sourceLineNo">378</span><a name="line.378"></a>
+<span class="sourceLineNo">379</span>                                    final Class[] parameterTypes = method.getParameterTypes();<a name="line.379"></a>
+<span class="sourceLineNo">380</span><a name="line.380"></a>
+<span class="sourceLineNo">381</span>                                    AccessibleObjectParameterSet paramsForMethod = getParameterToUseForObject(method, parameters);<a name="line.381"></a>
+<span class="sourceLineNo">382</span><a name="line.382"></a>
+<span class="sourceLineNo">383</span><a name="line.383"></a>
+<span class="sourceLineNo">384</span>                                    final Parameter[] currentParameters = paramsForMethod != null ? paramsForMethod.getParams() : createDefaultParameters(parameterTypes.length);<a name="line.384"></a>
+<span class="sourceLineNo">385</span>                                    for (int i = 0; i &lt; currentParameters.length; i++) {<a name="line.385"></a>
+<span class="sourceLineNo">386</span>                                        currentParameters[i].verify(container, MethodInjector.this, parameterTypes[i],<a name="line.386"></a>
+<span class="sourceLineNo">387</span>                                                new ParameterNameBinding(getParanamer(), method, i), useNames(),<a name="line.387"></a>
+<span class="sourceLineNo">388</span>                                                getBindings(method.getParameterAnnotations())[i]);<a name="line.388"></a>
+<span class="sourceLineNo">389</span>                                    }<a name="line.389"></a>
+<span class="sourceLineNo">390</span><a name="line.390"></a>
+<span class="sourceLineNo">391</span>                                }<a name="line.391"></a>
+<span class="sourceLineNo">392</span>                                return null;<a name="line.392"></a>
+<span class="sourceLineNo">393</span>                            }<a name="line.393"></a>
+<span class="sourceLineNo">394</span>                        };<a name="line.394"></a>
+<span class="sourceLineNo">395</span>                    }<a name="line.395"></a>
+<span class="sourceLineNo">396</span>                    verifyingGuard.setGuardedContainer(container);<a name="line.396"></a>
+<span class="sourceLineNo">397</span>                    verifyingGuard.observe(getComponentImplementation(), null);<a name="line.397"></a>
+<span class="sourceLineNo">398</span>                        } finally {<a name="line.398"></a>
+<span class="sourceLineNo">399</span>                    if (i_created) {<a name="line.399"></a>
+<span class="sourceLineNo">400</span>                        verifyingGuard.remove();<a name="line.400"></a>
+<span class="sourceLineNo">401</span>                        verifyingGuard = null;<a name="line.401"></a>
+<span class="sourceLineNo">402</span>                    }<a name="line.402"></a>
+<span class="sourceLineNo">403</span>                        }<a name="line.403"></a>
+<span class="sourceLineNo">404</span>        }<a name="line.404"></a>
+<span class="sourceLineNo">405</span><a name="line.405"></a>
+<span class="sourceLineNo">406</span><a name="line.406"></a>
+<span class="sourceLineNo">407</span><a name="line.407"></a>
+<span class="sourceLineNo">408</span>        @Override<a name="line.408"></a>
+<span class="sourceLineNo">409</span>        public String getDescriptor() {<a name="line.409"></a>
+<span class="sourceLineNo">410</span>            StringBuilder mthds = new StringBuilder();<a name="line.410"></a>
+<span class="sourceLineNo">411</span>            for (Method method : getInjectorMethods()) {<a name="line.411"></a>
+<span class="sourceLineNo">412</span>                mthds.append(",").append(method.getName());<a name="line.412"></a>
+<span class="sourceLineNo">413</span>            }<a name="line.413"></a>
+<span class="sourceLineNo">414</span>            return "MethodInjector["+mthds.substring(1)+"]-";<a name="line.414"></a>
+<span class="sourceLineNo">415</span>        }<a name="line.415"></a>
+<span class="sourceLineNo">416</span><a name="line.416"></a>
+<span class="sourceLineNo">417</span>        @Override<a name="line.417"></a>
+<span class="sourceLineNo">418</span>        protected boolean isNullParamAllowed(final AccessibleObject member, final int i) {<a name="line.418"></a>
+<span class="sourceLineNo">419</span>            Annotation[] annotations = ((Method) member).getParameterAnnotations()[i];<a name="line.419"></a>
+<span class="sourceLineNo">420</span>            for (Annotation annotation : annotations) {<a name="line.420"></a>
+<span class="sourceLineNo">421</span>                if (annotation instanceof Nullable) {<a name="line.421"></a>
+<span class="sourceLineNo">422</span>                    return true;<a name="line.422"></a>
+<span class="sourceLineNo">423</span>                }<a name="line.423"></a>
+<span class="sourceLineNo">424</span>            }<a name="line.424"></a>
+<span class="sourceLineNo">425</span>            return false;<a name="line.425"></a>
+<span class="sourceLineNo">426</span>        }<a name="line.426"></a>
+<span class="sourceLineNo">427</span><a name="line.427"></a>
+<span class="sourceLineNo">428</span><a name="line.428"></a>
+<span class="sourceLineNo">429</span><a name="line.429"></a>
+<span class="sourceLineNo">430</span>    }<a name="line.430"></a>
+<span class="sourceLineNo">431</span>}<a name="line.431"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

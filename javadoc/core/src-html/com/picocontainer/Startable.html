@@ -1,0 +1,109 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>/*****************************************************************************<a name="line.1"></a>
+<span class="sourceLineNo">002</span> * Copyright (C) 2003-2011 PicoContainer Committers. All rights reserved.    *<a name="line.2"></a>
+<span class="sourceLineNo">003</span> * ------------------------------------------------------------------------- *<a name="line.3"></a>
+<span class="sourceLineNo">004</span> * The software in this package is published under the terms of the BSD      *<a name="line.4"></a>
+<span class="sourceLineNo">005</span> * style license a copy of which has been included with this distribution in *<a name="line.5"></a>
+<span class="sourceLineNo">006</span> * the license.txt file.                                                    *<a name="line.6"></a>
+<span class="sourceLineNo">007</span> *                                                                           *<a name="line.7"></a>
+<span class="sourceLineNo">008</span> * Idea by Rachel Davies, Original code by Aslak Hellesoy and Paul Hammant   *<a name="line.8"></a>
+<span class="sourceLineNo">009</span> *****************************************************************************/<a name="line.9"></a>
+<span class="sourceLineNo">010</span><a name="line.10"></a>
+<span class="sourceLineNo">011</span>package com.picocontainer;<a name="line.11"></a>
+<span class="sourceLineNo">012</span><a name="line.12"></a>
+<span class="sourceLineNo">013</span>/**<a name="line.13"></a>
+<span class="sourceLineNo">014</span> * &lt;p&gt;An interface which is implemented by components that can be started and stopped. The {@link Startable#start()}<a name="line.14"></a>
+<span class="sourceLineNo">015</span> * must be called at the begin of the component lifecycle. It can be called again only after a call to<a name="line.15"></a>
+<span class="sourceLineNo">016</span> * {@link Startable#stop()}. The {@link Startable#stop()} method must be called at the end of the component lifecycle,<a name="line.16"></a>
+<span class="sourceLineNo">017</span> * and can further be called after every {@link Startable#start()}. If a component implements the {@link Disposable}<a name="line.17"></a>
+<span class="sourceLineNo">018</span> * interface as well, {@link Startable#stop()} should be called before {@link Disposable#dispose()}.&lt;/p&gt;<a name="line.18"></a>
+<span class="sourceLineNo">019</span> * &lt;p/&gt;<a name="line.19"></a>
+<span class="sourceLineNo">020</span> * &lt;p&gt;For more advanced and pluggable lifecycle support, see the functionality offered by picocontainer-gems<a name="line.20"></a>
+<span class="sourceLineNo">021</span> * subproject.&lt;/p&gt;<a name="line.21"></a>
+<span class="sourceLineNo">022</span> * @see com.picocontainer.Disposable the Disposable interface if you need to &lt;code&gt;dispose()&lt;/code&gt; semantics.<a name="line.22"></a>
+<span class="sourceLineNo">023</span> * @author Paul Hammant<a name="line.23"></a>
+<span class="sourceLineNo">024</span> * @author Aslak Helles&amp;oslash;y<a name="line.24"></a>
+<span class="sourceLineNo">025</span> */<a name="line.25"></a>
+<span class="sourceLineNo">026</span>public interface Startable {<a name="line.26"></a>
+<span class="sourceLineNo">027</span>    /**<a name="line.27"></a>
+<span class="sourceLineNo">028</span>     * Start this component. Called initially at the begin of the lifecycle. It can be called again after a stop.<a name="line.28"></a>
+<span class="sourceLineNo">029</span>     */<a name="line.29"></a>
+<span class="sourceLineNo">030</span>    void start();<a name="line.30"></a>
+<span class="sourceLineNo">031</span><a name="line.31"></a>
+<span class="sourceLineNo">032</span>    /**<a name="line.32"></a>
+<span class="sourceLineNo">033</span>     * Stop this component. Called near the end of the lifecycle. It can be called again after a further start. Implement<a name="line.33"></a>
+<span class="sourceLineNo">034</span>     * {@link Disposable} if you need a single call at the definite end of the lifecycle.<a name="line.34"></a>
+<span class="sourceLineNo">035</span>     */<a name="line.35"></a>
+<span class="sourceLineNo">036</span>    void stop();<a name="line.36"></a>
+<span class="sourceLineNo">037</span>}<a name="line.37"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>

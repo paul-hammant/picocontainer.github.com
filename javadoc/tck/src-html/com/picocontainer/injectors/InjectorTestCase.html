@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html lang="en">
+<head>
+<title>Source code</title>
+<link rel="stylesheet" type="text/css" href="../../../../stylesheet.css" title="Style">
+</head>
+<body>
+<div class="sourceContainer">
+<pre><span class="sourceLineNo">001</span>package com.picocontainer.injectors;<a name="line.1"></a>
+<span class="sourceLineNo">002</span><a name="line.2"></a>
+<span class="sourceLineNo">003</span>import static com.picocontainer.injectors.Injector.constructor;<a name="line.3"></a>
+<span class="sourceLineNo">004</span>import static org.junit.Assert.assertSame;<a name="line.4"></a>
+<span class="sourceLineNo">005</span><a name="line.5"></a>
+<span class="sourceLineNo">006</span>import org.junit.Test;<a name="line.6"></a>
+<span class="sourceLineNo">007</span><a name="line.7"></a>
+<span class="sourceLineNo">008</span>import com.picocontainer.ComponentAdapter;<a name="line.8"></a>
+<span class="sourceLineNo">009</span>import com.picocontainer.ComponentFactory;<a name="line.9"></a>
+<span class="sourceLineNo">010</span>import com.picocontainer.ComponentMonitor;<a name="line.10"></a>
+<span class="sourceLineNo">011</span>import com.picocontainer.Parameter;<a name="line.11"></a>
+<span class="sourceLineNo">012</span>import com.picocontainer.PicoContainer;<a name="line.12"></a>
+<span class="sourceLineNo">013</span>import com.picocontainer.PicoVisitor;<a name="line.13"></a>
+<span class="sourceLineNo">014</span>import com.picocontainer.monitors.NullComponentMonitor;<a name="line.14"></a>
+<span class="sourceLineNo">015</span>import com.picocontainer.parameters.ConstantParameter;<a name="line.15"></a>
+<span class="sourceLineNo">016</span>import com.picocontainer.visitors.AbstractPicoVisitor;<a name="line.16"></a>
+<span class="sourceLineNo">017</span><a name="line.17"></a>
+<span class="sourceLineNo">018</span>/**<a name="line.18"></a>
+<span class="sourceLineNo">019</span> * test capabilities of injector factory. as this is mostly convenience wrapper around<a name="line.19"></a>
+<span class="sourceLineNo">020</span> * constructors, we just test that everything was passed through<a name="line.20"></a>
+<span class="sourceLineNo">021</span> *<a name="line.21"></a>
+<span class="sourceLineNo">022</span> * @author ko5tik<a name="line.22"></a>
+<span class="sourceLineNo">023</span> */<a name="line.23"></a>
+<span class="sourceLineNo">024</span>public class InjectorTestCase {<a name="line.24"></a>
+<span class="sourceLineNo">025</span><a name="line.25"></a>
+<span class="sourceLineNo">026</span>    final Object key = new Object();<a name="line.26"></a>
+<span class="sourceLineNo">027</span>    final Parameter checked = new ConstantParameter(null);<a name="line.27"></a>
+<span class="sourceLineNo">028</span>    final Parameter[] checkedArray = new Parameter[]{checked};<a name="line.28"></a>
+<span class="sourceLineNo">029</span>    final ComponentMonitor monitor = new NullComponentMonitor();<a name="line.29"></a>
+<span class="sourceLineNo">030</span><a name="line.30"></a>
+<span class="sourceLineNo">031</span><a name="line.31"></a>
+<span class="sourceLineNo">032</span>    final PicoVisitor parameterChecker = new AbstractPicoVisitor() {<a name="line.32"></a>
+<span class="sourceLineNo">033</span><a name="line.33"></a>
+<span class="sourceLineNo">034</span><a name="line.34"></a>
+<span class="sourceLineNo">035</span>        public boolean visitContainer(final PicoContainer pico) {<a name="line.35"></a>
+<span class="sourceLineNo">036</span>            return false;  //To change body of implemented methods use File | Settings | File Templates.<a name="line.36"></a>
+<span class="sourceLineNo">037</span>        }<a name="line.37"></a>
+<span class="sourceLineNo">038</span><a name="line.38"></a>
+<span class="sourceLineNo">039</span>        public void visitComponentAdapter(final ComponentAdapter&lt;?&gt; componentAdapter) {<a name="line.39"></a>
+<span class="sourceLineNo">040</span>            //To change body of implemented methods use File | Settings | File Templates.<a name="line.40"></a>
+<span class="sourceLineNo">041</span>        }<a name="line.41"></a>
+<span class="sourceLineNo">042</span><a name="line.42"></a>
+<span class="sourceLineNo">043</span>        public void visitComponentFactory(final ComponentFactory componentFactory) {<a name="line.43"></a>
+<span class="sourceLineNo">044</span>            //To change body of implemented methods use File | Settings | File Templates.<a name="line.44"></a>
+<span class="sourceLineNo">045</span>        }<a name="line.45"></a>
+<span class="sourceLineNo">046</span><a name="line.46"></a>
+<span class="sourceLineNo">047</span>        public void visitParameter(final Parameter parameter) {<a name="line.47"></a>
+<span class="sourceLineNo">048</span>            assertSame(checked, parameter);<a name="line.48"></a>
+<span class="sourceLineNo">049</span>        }<a name="line.49"></a>
+<span class="sourceLineNo">050</span>    };<a name="line.50"></a>
+<span class="sourceLineNo">051</span><a name="line.51"></a>
+<span class="sourceLineNo">052</span>    /**<a name="line.52"></a>
+<span class="sourceLineNo">053</span>     * test that all parameters were passed to respective constructor<a name="line.53"></a>
+<span class="sourceLineNo">054</span>     */<a name="line.54"></a>
+<span class="sourceLineNo">055</span>    @Test<a name="line.55"></a>
+<span class="sourceLineNo">056</span>    public void testSimpleConstructor() {<a name="line.56"></a>
+<span class="sourceLineNo">057</span>        ComponentAdapter adapter = constructor(key, getClass(), checked);<a name="line.57"></a>
+<span class="sourceLineNo">058</span>        assertSame(key, adapter.getComponentKey());<a name="line.58"></a>
+<span class="sourceLineNo">059</span>        assertSame(getClass(), adapter.getComponentImplementation());<a name="line.59"></a>
+<span class="sourceLineNo">060</span>        adapter.accept(parameterChecker);<a name="line.60"></a>
+<span class="sourceLineNo">061</span>    }<a name="line.61"></a>
+<span class="sourceLineNo">062</span>}<a name="line.62"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+</div>
+</body>
+</html>
