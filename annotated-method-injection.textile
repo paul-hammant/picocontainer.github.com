@@ -1,13 +1,17 @@
 ---
 layout: article
 name: Annotated Method Injection
+lastModified: 9-August-2013
 ---
 
 h3. Overview
 
-p. This is where a component has an empty constructor and gets its dependencies injected into annotated methods after instantiation:
+p. "AnnotatedMethodInjection":/javadoc/core/com/picocontainer/injectors/AnnotatedMethodInjection.html is where a component has an empty 
+constructor and gets its dependencies injected into annotated methods after instantiation:
 
 {% highlight java %}
+import javax.inject.Inject;
+
 public class Apple {
   private Orange orange;
   private Pear pear;
@@ -31,7 +35,10 @@ public class Apple {
 h3. Usage
 
 {% highlight java %}
-pico = new DefaultPicoContainer(new AnnotatedMethodInjection();
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.defaults.DefaultPicoContainer;
+
+MutablePicoContainer pico = new DefaultPicoContainer(new AnnotatedMethodInjection();
 pico.addComponent(Apple.class); 
 // etc 
 Apple apple = pico.getComponent(Apple.class);
@@ -40,7 +47,10 @@ Apple apple = pico.getComponent(Apple.class);
 p. With an custom annotation instead of PicoContainer's @Inject
 
 {% highlight java %}
-pico = new DefaultPicoContainer(new AnnotatedMethodInjection(MyInjectAnnotaton.class);
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.defaults.DefaultPicoContainer;
+
+MutablePicoContainer pico = new DefaultPicoContainer(new AnnotatedMethodInjection(MyInjectAnnotaton.class);
 pico.addComponent(Apple.class); 
 // etc 
 Apple apple = pico.getComponent(Apple.class);
@@ -48,7 +58,8 @@ Apple apple = pico.getComponent(Apple.class);
 
 p. The method (whatever its name) needs an @Inject annotation. That is from our codebase (org.picocontainer.Inject).
 
-p. The component factory for this is *AnnotatedMethodInjection* . It only handles method-annotation injection types of components.
+p. The component factory for this is "AnnotatedMethodInjection":/javadoc/core/com/picocontainer/injectors/AnnotatedMethodInjection.html . It only handles method-annotation injection types of components.
 
-p. Additionally the default component factory *AdaptiveInjection* can also handle method-annotation injection types, if the @Inject annotation from PicoContainer's code-base is used as the marker for injection. AdaptiveInjection will also fall through to constructor injection if there is no recognized annotation.
+p. Additionally the default component factory "AdaptingInjection":/javadoc/core/com/picocontainer/injectors/AdaptingInjection.html can also handle method-annotation injection types, if the @Inject annotation from PicoContainer's code-base is used as the marker for injection. 
+AdaptingInjection will also fall through to constructor injection if there is no recognized annotation.
 

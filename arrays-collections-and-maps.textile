@@ -1,9 +1,10 @@
 ---
 layout: article
 name: Arrays, Collections and Maps
+lastModified: 9-August-2013
 ---
 
-p. Authors: Aslak Hellesøy and Jörg Schaible
+p. Authors: Aslak Hellesøy, Jörg Schaible
 
 h2. Supported Collective Types
 
@@ -45,10 +46,12 @@ public static class Bowl {
 p. Example usage:
 
 {% highlight java %}
+
 pico.addComponent(Shark.class);
 pico.addComponent(Cod.class);
 pico.addComponent(Bowl.class); 
 Bowl bowl = pico.getComponent(Bowl.class);
+
 {% endhighlight %}
 
 p. PicoContainer will instantiate the arrays and populate them with all components that matches the array type. Behind the scenes something similar to the following is happening:
@@ -81,13 +84,16 @@ public static class Bowl {
 }
 {% endhighlight %}
 
-p. Unfortunately for plain collections, there is no way of detecting the type of the components being part of the collection as it is done for native arrays. Therefore you must use a special constructor of "ComponentParameter":/javadoc/core/org/picocontainer/parameters/ComponentParameter.html and define the component's type:
+p. Unfortunately for plain collections, there is no way of detecting the type of the components being part of the collection as it is done for native arrays. Therefore you must use a special constructor of "ComponentParameter":/javadoc/core/com/picocontainer/parameters/ComponentParameter.html and define the component's type:
 
 {% highlight java %}
+import com.picocontainer.parameters.ComponentParameter;
+
+/* .... */
+
 pico.addComponent(Shark.class);
 pico.addComponent(Cod.class);
-pico.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{ new ComponentParameter(Fish.class, false), new ComponentParameter(Cod.class, false)});
+pico.addComponent(Bowl.class, Bowl.class, new ComponentParameter(Fish.class, false), new ComponentParameter(Cod.class, false));
 {% endhighlight %}
 
 p. The boolean argument defines, that the Collection cannot be empty. Also look at the constructor of the Bowl class. You can use a specific class implementing the Collection interface or just the interface itself and PicoContainer will provide a matching Collection instance.
@@ -98,10 +104,10 @@ p. Unlike for plain collections, PicoContainer can automatically detect the type
 
 {% highlight java %}
 public static class GenericBowl {
-  private final Listfishes;
-  private final Collectioncods;
+  private final List<Fish> fishes;
+  private final Collection<Cod> cods;
 
-  public GenericBowl(Listfishes, Collectioncods) {
+  public GenericBowl(List<Fish> fishes, Collection<Cod> cods) {
     this.fishes = fishes; this.cods = cods;
   }
 
@@ -138,13 +144,19 @@ public static class Bowl {
 }
 {% endhighlight %}
 
-p. As for plain collection types, PicoContainer cannot detect the type of the components, that should be part of the collection on its own. Again you must use a special constructor of "ComponentParameter":/javadoc/core/org/picocontainer/parameters/ComponentParameter.html and define the component's type:
+p. As for plain collection types, PicoContainer cannot detect the type of the components, that should be part of the collection on its own. Again you must use a special constructor of "ComponentParameter":/javadoc/core/com/picocontainer/parameters/ComponentParameter.html and define the component's type:
 
 {% highlight java %}
+import com.picocontainer.parameters.ComponentParameter;
+
+/* .... */
+
 pico.addComponent("Shark", Shark.class);
 pico.addComponent("Cod", Cod.class);
 pico.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{ new ComponentParameter(Fish.class, false), new ComponentParameter(Cod.class, false) });
+		new ComponentParameter(Fish.class, false), 
+		new ComponentParameter(Cod.class, false));
+		
 {% endhighlight %}
 
 p. The boolean argument defines, that the Map cannot be empty. Also look at the constructor of the Bowl class. You can use a specific class implementing the Map interface or just an interface itself and PicoContainer will provide a matching Map instance. A special feature is available due to the nature of the Map. The component adapter's key is used also as key in the injected Map.
@@ -158,16 +170,29 @@ h3. Empty Collective Instances
 p. Normally the dependency resolution for a collective type will fail, if no component of the specific component type is registered in the PicoContainer. With the constructors of ComponentParameter you have also the possibility to accept an empty collective type as a satisfying argument. Example code for an Array:
 
 {% highlight java %}
+import com.picocontainer.parameters.CollectionComponentParameter;
+import com.picocontainer.Parameter;
+
+/* .... */
+
 Parameter parameter = CollectionComponentParameter.ARRAY_ALLOW_EMPTY;
-pico.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{parameter, parameter}); Bowl bowl = (Bowl) pico.getComponent(Bowl.class);
+pico.addComponent(Bowl.class, Bowl.class, parameter, parameter); 
+
+Bowl bowl = (Bowl) pico.getComponent(Bowl.class);
 {% endhighlight %}
 
 p. Example code for a Collection (Map is analogous):
 
 {% highlight java %}
+import com.picocontainer.parameters.ComponentParameter;
+
+/* .... */
+
+
 pico.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{ new ComponentParameter(Fish.class, true), new ComponentParameter(Cod.class, true)}); 
+	new ComponentParameter(Fish.class, true),
+	new ComponentParameter(Cod.class, true)); 
+	
 Bowl bowl = pico.getComponent(Bowl.class);
 {% endhighlight %}
 
@@ -178,10 +203,11 @@ h3. Precedence
 p. PicoContainer will only generate a collective type on the fly, if no such type was registered before. So you can overwrite the dependency resolution (see example for a native Array):
 
 {% highlight java %}
-pico.addComponent(Shark.class);
-pico.addComponent(Cod.class);
-pico.addComponent(Bowl.class);
-pico.addComponent(new Fish[]{}); 
+pico.addComponent(Shark.class)
+	.addComponent(Cod.class)
+	.addComponent(Bowl.class)
+	.addComponent(new Fish[]{});
+	
 Bowl bowl = pico.getComponent(Bowl.class);
 {% endhighlight %}
 
@@ -190,6 +216,7 @@ p. Demonstrated with this unit test:
 {% highlight java %}
 List cods = Arrays.asList(bowl.getCods()); 
 assertEquals(1, cods.size()); 
+
 List fishes = Arrays.asList(bowl.getFishes()); 
 assertEquals(0, fishes.size());
 {% endhighlight %}
@@ -197,42 +224,60 @@ assertEquals(0, fishes.size());
 p. See same example code for a Collection (Map is again analogous):
 
 {% highlight java %}
+import java.util.*;
+import com.picocontainer.parameters.ComponentParameter;
+
+/* ... */
+
 final Set set = new HashSet();
-pico.addComponent(Shark.class);
-pico.addComponent(Cod.class);
-pico.addComponent(Bowl.class, Bowl.class, 
-  new Parameter[]{ new ComponentParameter(Fish.class, false), new ComponentParameter(Cod.class, false)});
-pico.addComponent(set); Bowl bowl = pico.getComponent(Bowl.class);
+pico.addComponent(Shark.class)
+	.addComponent(Cod.class)
+	.addComponent(Bowl.class, Bowl.class, 
+			new ComponentParameter(Fish.class, false), 
+			new ComponentParameter(Cod.class, false))
+	.addComponent(set);
+
+Bowl bowl = pico.getComponent(Bowl.class);
+
 Collection cods = bowl.getCods(); 
 assertEquals(0, cods.size()); 
 assertSame(set, cods); 
+
 Collection fishes = bowl.getFishes(); 
 assertEquals(2, fishes.size());
 {% endhighlight %}
 
-p. But how can you circumvent such a situation and ensure that the collective type is generated even if one of the same type was registered? Make usage of the "CollectionComponentParameter":/javadoc/core/org/picocontainer/parameters/CollectionComponentParameter.html . Example code for an Array:
+p. But how can you circumvent such a situation and ensure that the collective type is generated even if one of the same type was registered? Make usage of the "CollectionComponentParameter":/javadoc/core/com/picocontainer/parameters/CollectionComponentParameter.html . Example code for an Array:
 
 {% highlight java %}
+import com.picocontainer.parameters.CollectionComponentParameter;
+
+/* .... */
 pico.addComponent(Shark.class);
 pico.addComponent(Cod.class); 
 Parameter parameter = new CollectionComponentParameter();
-pico.addComponent(Bowl.class, 
-Bowl.class, new Parameter[]{parameter, parameter});
-pico.addComponent(new Fish[]{});
-pico.addComponent(new Cod[]{}); 
+
+pico.addComponent(Bowl.class, Bowl.class, parameter, parameter)
+	.addComponent(new Fish[]{})
+	.addComponent(new Cod[]{}); 
+
 Bowl bowl = pico.getComponent(Bowl.class);
 {% endhighlight %}
 
 p. And here the example code for a Collection (Map is still analogous):
 
 {% highlight java %}
-pico.addComponent(Shark.class);
-pico.addComponent(Cod.class);
-pico.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{ 
-      new CollectionComponentParameter(Fish.class, false), 
-      new CollectionComponentParameter(Cod.class, false)}); // This component will match both arguments of Bowl's constructor 
-pico.addComponent(new LinkedList()); 
+import com.picocontainer.parameters.CollectionComponentParameter;
+
+/* .... */
+
+pico.addComponent(Shark.class)
+	.addComponent(Cod.class)
+	.addComponent(Bowl.class, Bowl.class, 
+		  new CollectionComponentParameter(Fish.class, false), 
+		  new CollectionComponentParameter(Cod.class, false)) // This component will match both arguments of Bowl's constructor 
+	.addComponent(new LinkedList()); 
+	
 Bowl bowl = pico.getComponent(Bowl.class);
 {% endhighlight %}
 
@@ -241,13 +286,23 @@ h3. Scope
 p. Any collective types will collect its components from the complete container hierarchy. See example code for Map types as a unit test:
 
 {% highlight java %}
-MutablePicoContainer parent = new DefaultPicoContainer();
-parent.addComponent("Tom", Cod.class);
-parent.addComponent("Harry", Cod.class); 
-MutablePicoContainer child = new DefaultPicoContainer(parent); 
-child.addComponent("Dick", Cod.class); 
-child.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{ new ComponentParameter(Fish.class, false), new ComponentParameter(Cod.class, false) }); 
+import com.picocontainer.defaults.DefaultPicoContainer;
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.parameters.ComponentParameter;
+
+/* .... */
+
+MutablePicoContainer parent = new DefaultPicoContainer()
+	.addComponent("Tom", Cod.class);
+	.addComponent("Harry", Cod.class);
+
+ 
+MutablePicoContainer child = new DefaultPicoContainer(parent)
+	.addComponent("Dick", Cod.class); 
+	.addComponent(Bowl.class, Bowl.class, 
+				new ComponentParameter(Fish.class, false), 
+				new ComponentParameter(Cod.class, false)); 
+				
 Bowl bowl = child.getComponent(Bowl.class); 
 assertEquals(3, bowl.fishes.size()); 
 assertEquals(3, bowl.cods.size());
@@ -256,14 +311,23 @@ assertEquals(3, bowl.cods.size());
 p. All Cods have been found and put into the bowl. If two components are registered with the same key, the first found will be considered. This is even true, if it means that the component is not part of the collection. See example code again as unit test:
 
 {% highlight java %}
-MutablePicoContainer parent = new DefaultPicoContainer();
-parent.addComponent("Tom", Cod.class);
-parent.addComponent("Dick", Cod.class);
-parent.addComponent("Harry", Cod.class); 
-MutablePicoContainer child = new DefaultPicoContainer(parent); 
-child.addComponent("Dick", Shark.class); 
-child.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{ new ComponentParameter(Fish.class, false), new ComponentParameter(Cod.class, false) }); 
+import com.picocontainer.defaults.DefaultPicoContainer;
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.parameters.ComponentParameter;
+
+/* .... */
+
+MutablePicoContainer parent = new DefaultPicoContainer()
+	.addComponent("Tom", Cod.class);
+	.addComponent("Dick", Cod.class);
+	.addComponent("Harry", Cod.class); 
+	
+MutablePicoContainer child = new DefaultPicoContainer(parent)
+	.addComponent("Dick", Shark.class); 
+	.addComponent(Bowl.class, Bowl.class, 
+			new ComponentParameter(Fish.class, false), 
+			new ComponentParameter(Cod.class, false)); 
+			
 Bowl bowl = child.getComponent(Bowl.class); 
 assertEquals(3, bowl.fishes.size()); 
 assertEquals(2, bowl.cods.size());
@@ -276,10 +340,16 @@ h3. Filter based on Key Type
 p. A generated map automatically deliver the component adapter's key as key of the map entry. As for the generic types in Java 5.0 this key may be of a specific type. Just define it using the constructors of ComponentParameter. See the example code:
 
 {% highlight java %}
+import com.picocontainer.parameters.ComponentParameter;
+
+/* .... */
+
 pico.addComponent(Shark.class);
-pico.addComponent("Nemo", Cod.class);
-pico.addComponent(Bowl.class, Bowl.class, 
-    new Parameter[]{ new ComponentParameter(String.class, Fish.class, false), new ComponentParameter(Cod.class, false) }); 
+	.addComponent("Nemo", Cod.class);
+	.addComponent(Bowl.class, Bowl.class, 
+			new ComponentParameter(String.class, Fish.class, false), 
+			new ComponentParameter(Cod.class, false)); 
+			
 Bowl bowl = pico.getComponentOfType(Bowl.class);
 {% endhighlight %}
 
@@ -289,6 +359,7 @@ p. The unit test demonstrates that only *named* fishes are in the fish bowl:
 Cod cod = (Cod) pico.getComponentOfType(Cod.class);
 Map fishMap = bowl.getFishes();
 Map codMap = bowl.getCods(); 
+
 assertEquals(1, fishMap.size()); 
 assertEquals(1, codMap.size()); 
 assertEquals(fishMap, codMap); 
@@ -300,6 +371,7 @@ p. But this key type selection does not only work with Map types, but also with 
 {% highlight java %}
 List fishes = Arrays.asList(bowl.getFishes()); 
 List cods = Arrays.asList(bowl.getCods()); 
+
 assertEquals(1, fishes.size()); 
 assertEquals(1, cods.size()); 
 assertEquals(fishes, cods);
@@ -307,27 +379,34 @@ assertEquals(fishes, cods);
 
 h3. Individual Filter
 
-p. Although filtering on component type or key type is useful, it might not be enough. Therefore you can add an additional and completely individual filter by overloading "CollectionComponentParameter.evaluate(ComponentAdapter)":/javadoc/core/org/picocontainer/parameters/CollectionComponentParameter.html#evaluate(org.picocontainer.ComponentAdapter) . See the example code to filter out the Cod named _Tom_ :
+p. Although filtering on component type or key type is useful, it might not be enough. Therefore you can add an additional and completely individual filter by overloading "CollectionComponentParameter.evaluate(ComponentAdapter)":/javadoc/core/com/picocontainer/parameters/CollectionComponentParameter.html#evaluate(com.picocontainer.ComponentAdapter)) . See the example code to filter out the Cod named _Tom_ :
 
 {% highlight java %}
-pico = new DefaultPicoContainer();
-pico.addComponent("Tom", Cod.class);
-pico.addComponent("Dick", Cod.class);
-pico.addComponent("Harry", Cod.class);
-pico.addComponent("Sharky", Shark.class);
-pico.addComponent(Bowl.class, Bowl.class, new Parameter[]{ 
-	new CollectionComponentParameter(Fish.class, false), 
-	new CollectionComponentParameter(Cod.class, false) { 
-		protected boolean evaluate(ComponentAdapter adapter) { 
-			return !"Tom".equals(adapter.getComponentKey()); 
-		} 
-	} 
-}); 
+import com.picocontainer.parameters.CollectionComponentParameter;
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.defaults.DefaultPicoContainer;
+
+/* .... */
+
+MutablePicoContainer pico = new DefaultPicoContainer()
+	.addComponent("Tom", Cod.class)
+	.addComponent("Dick", Cod.class)
+	.addComponent("Harry", Cod.class)
+	.addComponent("Sharky", Shark.class)
+	.addComponent(Bowl.class, Bowl.class, 
+		new CollectionComponentParameter(Fish.class, false), 
+		new CollectionComponentParameter(Cod.class, false) { 
+			protected boolean evaluate(ComponentAdapter adapter) { 
+				return !"Tom".equals(adapter.getComponentKey()); 
+			} 
+	 }); 
+	 
 Cod tom = pico.getComponent("Tom"); 
 Bowl bowl = pico.getComponent(Bowl.class); 
 assertTrue(bowl.fishes.values().contains(tom)); 
 assertFalse(bowl.cods.values().contains(tom));
+
 {% endhighlight %}
 
-p. An even more advanced filter mechanism is using the "Constraint":/javadoc/gems/org/picocontainer/gems/constraints/package-summary.html extension as provided in the "picocontainer gems":http://www.picocontainer.org .
+p. An even more advanced filter mechanism is using the "Constraint":/javadoc/gems/com/picocontainer/gems/constraints/package-summary.html extension as provided in the "PicoContainer-Gems" project.
 
