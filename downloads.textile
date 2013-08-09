@@ -1,31 +1,65 @@
 ---
 layout: article
 name: Downloads
+lastModified: 9-August-2013
 ---
+h2. Method 1 - Direct Download
 
-h3. Released Binary and Source Jars (1.x and 2.x)
+h3. PicoContainer 3.X downloads
 
-p. Core: "https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer/":https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer/
+* Distribution: "https://nexus.codehaus.org/content/repositories/releases/com/picocontainer/picocontainer-distribution/":https://nexus.codehaus.org/content/repositories/releases/com/picocontainer/picocontainer-distribution/
 
-p. Gems: "https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-gems/":https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-gems/
+* Core: "https://nexus.codehaus.org/content/repositories/releases/com/picocontainer/picocontainer/":https://nexus.codehaus.org/content/repositories/releases/com/picocontainer/picocontainer/
 
-p. Distribution: "https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-distribution/":https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-distribution/
+* Gems: "https://nexus.codehaus.org/content/repositories/releases/com/picocontainer/picocontainer-gems/":https://nexus.codehaus.org/content/repositories/releases/com/picocontainer/picocontainer-gems/
+
+
+
+h3. Older Binary and Source Jars (1.x and 2.x)
+
+* Core: "https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer/":https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer/
+
+* Gems: "https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-gems/":https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-gems/
+
+* Distribution: "https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-distribution/":https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer-distribution/
 
 h3. Snapshot Binary and Source Jars
 
 p.  _(Current work in progress)_ 
 
-p. Core: "http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer/":http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer/ 
+* Core: "http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer/":http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer/ 
 
-p. Gems: "http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-gems/":http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-gems/ 
+* Gems: "http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-gems/":http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-gems/ 
 
-p. Distribution: "http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-distribution/":http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-distribution/ 
+* Distribution: "http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-distribution/":http://snapshots.repository.codehaus.org/org/picocontainer/picocontainer-distribution/ 
 
 p. Currently, the Core jar is ~247K, and the Gems jar is ~112K. The distribution zip contains all jars and documentation.
 
-h3. Using Maven Artifacts
+h2. Method 2 - Maven
 
 p. If you use Maven as the build system (or one that is compatible with the Maven Repository), you can declare dependencies as
 
-org.picocontainerpicocontainer[-gems][version]p. specifying the version. Declaring this dependency will pull in all other required dependencies (ie transitive dependencies). Note that PicoContainer core artifactId is simply "picocontainer".
 
+
+{% highlight xml %}
+<dependency>
+	<groupId>com.picocontainer</groupId>
+	<artifactId>picocontainer</artifactId>
+	<version>3.0</version>
+</dependency>
+{% endhighlight %}
+
+and possibly:
+
+{% highlight xml %}
+<dependency>
+	<groupId>com.picocontainer</groupId>
+	<artifactId>picocontainer-gems</artifactId>
+	<version>3.0</version>
+</dependency>
+{% endhighlight %}
+
+
+p.  Declaring this dependency will pull in all other required dependencies (ie transitive dependencies). Note that PicoContainer core artifactId is simply "picocontainer".
+
+p. Additionally, this allows PicoContainer to be used in other dependency resolving mechanisms that use the Maven repository format such as "Grape":http://groovy.codehaus.org/Grape and "Ivy":http://ant.apache.org/ivy/

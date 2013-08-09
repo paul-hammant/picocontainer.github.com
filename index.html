@@ -1,6 +1,7 @@
 ---
 layout: home
-name: home page
+name: PicoContainer Home Page
+lastModified: 9-August-2013
 ---
 
 <ol class="listProjects">
@@ -14,26 +15,29 @@ name: home page
   	</span>
     </a>
   </li>
-
-{% for post in site.posts reversed limit:2 %}
-    {% cycle '<li>', '<li class="right">' %}
-    <a href="{{ post.url }}" title="More on {{ post.name }} {{ post.period }}">
-       <span class="header">{{ post.name }}</span>
-       <em>{{ post.bullets | downcase }}</em>
-       <img src="/images/{{post.image}}_home.png" alt="Project screenshot" />
-       <center><span class="desc">{{ post.date | date: "%d %B %Y" }}</span></center>
-       <span class="desc">{{post.desc}} (<span class="more">more&hellip;</span>)</span>
-    </a>
-  </li>
-{% endfor %}
-
+	<li>
+		<a href="news.html" title="Latest News">
+		   <span class="header">Latest News</span>
+		   <em>picocontainer,releases,news</em>
+		   <img src="/images/pico_release_home.png" alt="News RSS" />
+		   <span class="desc">Latest news about PicoContainer releases and reviews (<span class="more">Read the latest news &hellip;</span>)</span>
+		</a>
+	</li>
+	<li>
+		<a href="downloads.html" title="Get PicoContainer!">
+			<span class="header">Download</span>
+			<em>picocontainer,releases,downloads</em>
+			<img src="/images/document-save.png" alt="Download Icon" />
+			<span class="desc">Get PicoContainer Now (<span class="more">Go to the downloads &hellip;</span>)</span>
+		</a>
+	</li>
     <li class="left">
     <a href="http://martinfowler.com/articles/injection.html" title="Martin's article">
-  	<span class="header">Martin Fowler on DI</span>
-  	<em>dependency injection, martin fowler</em>
-  	<img src="/images/fowler_home.png" alt="page screenshot" />
-  	<span class="desc">Martin Fowler wrote the canonical article on Dependency Injection after talking to the PicoContainer team in 2003.  (<span class="more">read about it on his bliki&hellip;</span>)
-  	</span>
+		<span class="header">Martin Fowler on DI</span>
+		<em>dependency injection, martin fowler</em>
+		<img src="/images/fowler_home.png" alt="page screenshot" />
+		<span class="desc">Martin Fowler wrote the canonical article on Dependency Injection after talking to the PicoContainer team in 2003.  (<span class="more">read about it on his bliki&hellip;</span>)
+		</span>
     </a>
   </li>
 
