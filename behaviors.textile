@@ -1,40 +1,57 @@
 ---
 layout: article
 name: Behaviors Overview
+lastModified: 9-August-2013
 ---
 
 p. PicoContainer can add behaviors to components automatically during instantiation.
 
-p. Behaviors are delivered by passing a BehaviorFactory reference into the PicoContainer instance on construction. For the most part BehaviorFactories are completely stateless, and the Behavior instances they make are not.
+p. Behaviors are delivered by passing a "Behavior":/javadoc/core/com/picocontainer/Behavior.html reference into the PicoContainer instance on construction. For the most part Behaviors are completely stateless, and the 
+"ChangedBehavior":/javadoc/core/com/picocontainer/ChangedBehavior.html instances they make are not.
 
 h3. General use
 
-p. DefaultPicoContainer can take a behavior factory instance in its constructor:
+p. "DefaultPicoContainer":/javadoc/core/com/picocontainer/defaults/DefaultPicoContainer.html can take a behavior factory instance in its constructor:
 
 {% highlight java %}
-pico = new DefaultPicoContainer(new BehaviorClass());
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.defaults.DefaultPicoContainer;
+
+MutablePicoContainer pico = new DefaultPicoContainer(new BehaviorClass());
 pico.addComponent(Foo.class); 
 // other components added 
+
 Foo foo = pico.getcomponent(Foo.class) // Foo instance will be affected by an additional behavior.
 {% endhighlight %}
 
 p. Or it can take behaviors that wrap each other:
 
 {% highlight java %}
-pico = new DefaultPicoContainer(new BehaviorClass().wrap(new AnotherBehaviorClass()));
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.defaults.DefaultPicoContainer;
+
+MutablePicoContainer pico = new DefaultPicoContainer(new BehaviorClass().wrap(new AnotherBehaviorClass()));
 pico.addComponent(Foo.class); 
 // other components added 
+
 Foo foo = pico.getcomponent(Foo.class) // Foo instance will be affected by two additional behaviors.
 {% endhighlight %}
 
 p. Behaviors can be signaled by properties per component:
 
 {% highlight java %}
-pico = new DefaultPicoContainer();
-pico.as(SOME_BEHAVIOR).addComponent(Foo.class); 
+import static com.picocontainer.Characteristics.*;
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.defaults.DefaultPicoContainer;
+
+MutablePicoContainer pico = new DefaultPicoContainer();
+pico.as(CACHING).addComponent(Foo.class)
+	.as(NO_CACHE, LOCKING).addComponent(Bar.class); 
+
 // the behavior has a property marking it, and the default component factory understands that property 
 // other components added 
-Foo foo = pico.getcomponent(Foo.class) 
+
+Foo foo = pico.getComponent(Foo.class) 
 // Foo instance will be affected by an additional behavior.
 {% endhighlight %}
 
@@ -44,19 +61,22 @@ p. You can build a container with the applicable property:
 pico = new PicoBuilder().withXXXBehavior().build();
 pico.addComponent(Foo.class); 
 // other components added 
-Foo foo = pico.getcomponent(Foo.class) 
+Foo foo = pico.getComponent(Foo.class) 
 // Foo instance will be affected by an additional behavior.
 {% endhighlight %}
 
 p. Behaviors can be chained together by PicoBuilder:
 
 {% highlight java %}
-import static org.picocontainer.behaviors.Behaviors.xxxxxxx;
-import static org.picocontainer.behaviors.Behaviors.yyyyyyy;
+import com.picocontainer.PicoBuilder;
+import com.picocontainer.MutablePicoContainer;
+import static com.picocontainer.behaviors.Behaviors.xxxxxxx;
+import static com.picocontainer.behaviors.Behaviors.yyyyyyy;
 ...
-pico = new PicoBuilder().withBehaviors(xxxxxxx(), yyyyyyy()).build();
- pico.addComponent(Foo.class); 
+MutablePicoContainer pico = new PicoBuilder().withBehaviors(xxxxxxx(), yyyyyyy()).build()
+	.addComponent(Foo.class); 
 // other components added 
+
 Foo foo = pico.getcomponent(Foo.class) 
 // Foo instance will be affected by two additional behaviors.
 {% endhighlight %}
@@ -82,3 +102,4 @@ p. AOP Style Interception is where PicoContainer can invoke functionality before
 h3. Where Next?
 
  %(callout)The "Component Lifecycle":lifecycle.html page details the lifecycle concepts applicable to some components% 
+ 

@@ -1,35 +1,50 @@
 ---
 layout: article
 name: Building Containers
+lastModified: August 8th, 2013
 ---
 
-p. Rather than new up a PicoContainer instance with the right ComponentFactory, LifecycleStategy and ComponentMonitor, your can use PicoBuilder for convenience. Refer to Martin Fowler's "'Fluent Interface'":http://www.martinfowler.com/bliki/FluentInterface.html article, for some of the motivation behind this class.
+p. Rather than new up a PicoContainer instance with the right "ComponentFactory":/javadoc/core/com/picocontainer/ComponentFactory.html:, "LifecycleStategy":/javadoc/core/com/picocontainer/LifecycleStrategy.html and "ComponentMonitor":/javadoc/core/com/picocontainer/ComponentMonitor.html, your can use "PicoBuilder":/javadoc/core/com/picocontainer/PicoBuilder.html for convenience. 
+
+p. Refer to Martin Fowler's "'Fluent Interface'":http://www.martinfowler.com/bliki/FluentInterface.html article, for some of the motivation behind this class.
 
 p. Some simple examples :
 
 {% highlight java %}
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.PicoBuilder;
+
 pico = new PicoBuilder().build();
- pico.addComponent(Apple.class);
+pico.addComponent(Apple.class);
+
+//Turn on caching (singleton) behavior 
 pico = new PicoBuilder().withCaching().build();
- pico.addComponent(Apple.class);
-pico = new PicoBuilder().withCaching().build();
- pico.addComponent(Apple.class);
+pico.addComponent(Apple.class);
+
+//Add hidden implementation capabilities
 pico = new PicoBuilder().withHiddenImplementations().build();
- pico.addComponent(Apple.class);
+pico.addComponent(Apple.class);
 {% endhighlight %}
 
 p. More variations for behaviors :
 
 {% highlight java %}
-pico = new PicoBuilder().withLifecycle().withConsoleMonitor().build();
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.PicoBuilder;
+import static com.picocontainer.injectors.Injectors.SDI;
+import static com.picocontainer.behaviors.Behaviors.caching;
+import static com.picocontainer.behaviors.Behaviors.implementationHiding;
+import static com.picocontainer.behaviors.Behaviors.synchronizing;
+
+//Add lifecycle behavior + ConsoleComponentMonitor
+MutablePicoContainer pico = new PicoBuilder().withLifecycle().withConsoleMonitor().build();
 pico.addComponent(Apple.class);
+
+//Add ComponentMonitor of choice -- ConsoleComponent monitor in this case.
 pico = new PicoBuilder().withMonitor(ConsoleComponentMonitor.class).build();
 pico.addComponent(Apple.class);
-import static org.picocontainer.injectors.Injectors.SDI;
-import static org.picocontainer.behaviors.Behaviors.caching;
-import static org.picocontainer.behaviors.Behaviors.implementationHiding;
-import static org.picocontainer.behaviors.Behaviors.synchronizing;
-...
+
+//Add ComponentMonitor of choice -- ConsoleComponent monitor in this case.
 pico = new PicoBuilder(SDI()).withBehaviors(caching(), implementationHiding(), synchronizing()).build();
 pico.addComponent(Apple.class);
 {% endhighlight %}
@@ -37,20 +52,21 @@ pico.addComponent(Apple.class);
 p. Setting a parent container :
 
 {% highlight java %}
-child = new PicoBuilder(parentContainer).build(); child.addComponent(Apple.class);
+child = new PicoBuilder(parentContainer).build(); 
+child.addComponent(Apple.class);
 {% endhighlight %}
 
 p. Specifying an injection type:
 
 {% highlight java %}
 pico = new PicoBuilder().withAnnotationInjection().build();
- pico.addComponent(Apple.class);
+pico.addComponent(Apple.class);
 {% endhighlight %}
 
 p. Specifying an injection type a different way:
 
 {% highlight java %}
-import static org.picocontainer.injectors.Injectors.SDI;
+import static com.picocontainer.injectors.Injectors.SDI;
 ...
 pico = new PicoBuilder(SDI()).build();
 pico.addComponent(Apple.class);
@@ -59,6 +75,9 @@ pico.addComponent(Apple.class);
 p. A custom container component used by a custom ComponentBehavior (though could be used by ComponentMonitor or LifecycleStrategy as easily):
 
 {% highlight java %}
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.PicoBuilder;
+
 pico = new PicoBuilder() 
   .withCustomContainerComponent(new MyQuantumPhysicsConnector())
   .withComponentFactory(MyQuantumPhysicsConnectionNeedingComponentBehavior.class)
@@ -69,6 +88,9 @@ pico.addComponent(Apple.class);
 p. A custom container implementation (DefaultPicoContainer is the default):
 
 {% highlight java %}
+import com.picocontainer.MutablePicoContainer;
+import com.picocontainer.PicoBuilder;
+
 MyCustomPicoContainer pico = (MyCustomPicoContainer) new PicoBuilder().implementedBy(MyCustomPicoContainer.class).build();
- pico.addComponent(Apple.class);
+pico.addComponent(Apple.class);
 {% endhighlight %}
