@@ -25,8 +25,8 @@ pico = new PicoBuilder().withSynchronizing().withCaching().build();
 pico.addComponent(Apple.class);
 Apple a1 = pico.getComponent(Apple.class);
 Apple a2 = pico.getComponent(Apple.class); // both the same instance
-import static org.picocontainer.behaviors.Behaviors.synchronizing;
-import static org.picocontainer.behaviors.Behaviors.caching;
+import static com.picocontainer.behaviors.Behaviors.synchronizing;
+import static com.picocontainer.behaviors.Behaviors.caching;
 ...
 pico = new PicoBuilder().withBehaviors(synchronizing(), caching()).build();
 pico.addComponent(Apple.class);
@@ -51,8 +51,8 @@ pico = new PicoBuilder().withLocking().withCaching().build();
 pico.addComponent(Apple.class);
 Apple a1 = pico.getComponent(Apple.class);
 Apple a2 = pico.getComponent(Apple.class); // both the same instance
-import static org.picocontainer.behaviors.Behaviors.locking;
-import static org.picocontainer.behaviors.Behaviors.caching;
+import static com.picocontainer.behaviors.Behaviors.locking;
+import static com.picocontainer.behaviors.Behaviors.caching;
 ...
 pico = new PicoBuilder().withBehaviors(synchronizing(), caching()).build();
 pico.addComponent(Apple.class);

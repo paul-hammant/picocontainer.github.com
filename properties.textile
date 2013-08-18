@@ -12,14 +12,14 @@ p. They can also be set in a more persistent manner for the MutablePicoContainer
 p. Some examples :
 
 {% highlight java %}
-import static org.picocontainer.Characteristics.SDI;
-import static org.picocontainer.Characteristics.CACHE;
+import static com.picocontainer.Characteristics.SDI;
+import static com.picocontainer.Characteristics.CACHE;
 ...
 pico = new DefaultPicoContainer();
 pico.as(CACHE).addComponent(Apple.class);
 pico.as(CACHE, SDI).addComponent(Pear.class);
-import static org.picocontainer.Characteristics.SDI;
-import static org.picocontainer.Characteristics.CACHE;
+import static com.picocontainer.Characteristics.SDI;
+import static com.picocontainer.Characteristics.CACHE;
 ...
 pico = new DefaultPicoContainer();
 pico.change(CACHE).addComponent(Apple.class);
@@ -42,7 +42,7 @@ p. Every characteristics set for a component must be handled by a BehaviorFactor
 
 p. If you setup DefaultPicoContainer with a BehaviorFactory/InjectionFactory combination that is unaware of the characteristics you subsequently use, Pico will object by way of an exception as you add the component to the container. See "Unprocessed Properties":/help/unprocessed-properties-help.html .
 
-p. Supplied properties (from org.picocontainer.Characteristics) -
+p. Supplied properties (from com.picocontainer.Characteristics) -
 
 * CDI - added components will be Constructor Dependency Injection.
 * SDI - added components will be Setter Dependency Injection.

@@ -18,7 +18,7 @@ p. To configure PicoContainer to handle the dependency injection of WebWork1 act
   
   <filter>  
     <filter-name>picoFilter</filter-name>  
-    <filter-class>org.picocontainer.web.webwork.PicoActionFactory$ServletFilter</filter-class>  
+    <filter-class>com.picocontainer.web.webwork.PicoActionFactory$ServletFilter</filter-class>  
   </filter>  
   
   <filter-mapping>  
@@ -27,7 +27,7 @@ p. To configure PicoContainer to handle the dependency injection of WebWork1 act
   </filter-mapping>  
   
   <listener>  
-    <listener-class>org.picocontainer.web.webwork.WebWorkPicoServletContainerListener</listener-class>  
+    <listener-class>com.picocontainer.web.webwork.WebWorkPicoServletContainerListener</listener-class>  
   </listener>  
   
   <servlet>  
@@ -38,7 +38,7 @@ p. To configure PicoContainer to handle the dependency injection of WebWork1 act
   
   <servlet>  
     <servlet-name>velocity</servlet-name>  
-    <servlet-class>org.picocontainer.web.webwork.WebWorkVelocityServlet</servlet-class>  
+    <servlet-class>com.picocontainer.web.webwork.WebWorkVelocityServlet</servlet-class>  
   </servlet>  
   
   <servlet-mapping>  

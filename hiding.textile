@@ -22,7 +22,7 @@ pico = new PicoBuilder().withImplementationHiding().build();
 pico.addComponent(Apple.class, AppleImpl.class);
 Apple a1 = pico.getComponent(Apple.class); // cannot cast back to AppleImpl
 
-import static org.picocontainer.behaviors.Behaviors.implementationHiding; 
+import static com.picocontainer.behaviors.Behaviors.implementationHiding; 
 ... 
 pico = new PicoBuilder().withBehaviors(implementationHiding()).build();
 pico.addComponent(Apple.class, AppleImpl.class);

@@ -19,7 +19,7 @@ public class FruitBasket {
 h2. Usage
 
 {% highlight java %}
-import static org.picocontainer.injectors.NamedFieldInjection.injectionFieldNames;
+import static com.picocontainer.injectors.NamedFieldInjection.injectionFieldNames;
 pico = new DefaultPicoContainer(new NamedFieldInjection();
 pico.as(injectionFieldNames("orange", "pear", "banana")).addComponent(FruitBasket.class);
 // etc

@@ -19,7 +19,7 @@ public class Apple {
 h3. Usage
 
 {% highlight java %}
-import static org.picocontainer.injectors.TypedFieldInjection.injectionFieldTypes;
+import static com.picocontainer.injectors.TypedFieldInjection.injectionFieldTypes;
 pico = new DefaultPicoContainer(new TypedFieldInjection();
 pico.as(injectionFieldTypes(Orange.class, Pear.class, Banana.class)).addComponent(Apple.class); // etc 
 Apple apple = pico.getComponent(Apple.class);

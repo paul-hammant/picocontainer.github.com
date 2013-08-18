@@ -56,7 +56,7 @@ pico.addComponent(Apple.class);
 Apple apple = pico.getComponent(Apple.class);
 {% endhighlight %}
 
-p. The method (whatever its name) needs an @Inject annotation. That is from our codebase (org.picocontainer.Inject).
+p. The method (whatever its name) needs an @Inject annotation. That is from our codebase (com.picocontainer.Inject).
 
 p. The component factory for this is "AnnotatedMethodInjection":/javadoc/core/com/picocontainer/injectors/AnnotatedMethodInjection.html . It only handles method-annotation injection types of components.
 

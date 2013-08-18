@@ -25,7 +25,7 @@ pico.addComponent(Apple.class);
 Apple a1 = pico.getComponent(Apple.class); 
 Apple a2 = pico.getComponent(Apple.class); // both the same instance
 
-import static org.picocontainer.behaviors.Behaviors.caching; 
+import static com.picocontainer.behaviors.Behaviors.caching; 
 ... 
 pico = new PicoBuilder().withBehaviors(caching()).build(); 
 pico.addComponent(Apple.class); 

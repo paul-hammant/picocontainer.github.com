@@ -33,7 +33,7 @@ pico.addComponent(Foo.class);
 PropertyApplicator pa = (PropertyApplicator) pico.getComponentAdapter(Foo.class);  
 pa.setProperty("message", "hello");  
 System.out.println(pico.getComponent(Foo.class)); // prints hello  
-import static org.picocontainer.behaviors.Behaviors.propertyApplying;  
+import static com.picocontainer.behaviors.Behaviors.propertyApplying;  
 ...  
 pico = new PicoBuilder().withBehaviors(propertyApplying()).build();  
 pico.addComponent(Foo.class);  
@@ -45,8 +45,8 @@ System.out.println(pico.getComponent(Foo.class)); // prints hello
 h3. Handling Behavior Chains
 
 {% highlight java %}
-import static org.picocontainer.behaviors.Behaviors.caching;  
-import static org.picocontainer.behaviors.Behaviors.propertyApplying;  
+import static com.picocontainer.behaviors.Behaviors.caching;  
+import static com.picocontainer.behaviors.Behaviors.propertyApplying;  
 ...  
 pico = new PicoBuilder().withBehaviors(caching(), propertyApplying()).build();  
 pico.addComponent(Foo.class);  
@@ -85,7 +85,7 @@ pico = new PicoBuilder().withAutomatic().build();
  pico.addComponent(Foo.class);
  pico.addComponent("bar", String.class);
  pico.getComponent("bar"); // Foo instantiated too\.
-import static org.picocontainer.behaviors.Behaviors.automatic;
+import static com.picocontainer.behaviors.Behaviors.automatic;
 ...
 pico = new PicoBuilder().withBehaviors(automatic()).build();
  pico.addComponent(Foo.class);

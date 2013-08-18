@@ -148,7 +148,7 @@ p. The class loads, but the @Inject annotation is not present in the set of decl
 {% highlight java %}
 setFoo:hello  
 Num annotations: 2  
-Annotation: @org.picocontainer.annotations.Inject()  
+Annotation: @com.picocontainer.annotations.Inject()  
 Annotation: @Foo$Bar()  
-InjectAnnotation: @org.picocontainer.annotations.Inject()
+InjectAnnotation: @com.picocontainer.annotations.Inject()
 {% endhighlight %}

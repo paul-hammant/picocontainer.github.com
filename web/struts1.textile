@@ -13,7 +13,7 @@ web.xml
   
   <filter>  
     <filter-name>picoFilter</filter-name>  
-    <filter-class>org.picocontainer.web.struts.PicoActionFactory$ServletFilter</filter-class>  
+    <filter-class>com.picocontainer.web.struts.PicoActionFactory$ServletFilter</filter-class>  
   </filter>  
   
   <filter-mapping>  
@@ -22,7 +22,7 @@ web.xml
   </filter-mapping>  
   
   <listener>  
-    <listener-class>org.picocontainer.web.PicoServletContainerListener</listener-class>  
+    <listener-class>com.picocontainer.web.PicoServletContainerListener</listener-class>  
   </listener>  
   
   <!-- Action Servlet Configuration -->  
@@ -56,17 +56,17 @@ p. Things are different in the struts-config.xml file though - there is a PicoCo
 
 {% highlight xml %}
   <form-beans>  
-    <form-bean name="cheeseForm" type="org.picocontainer.web.sample.struts.CheeseForm">  
+    <form-bean name="cheeseForm" type="com.picocontainer.web.sample.struts.CheeseForm">  
     </form-bean>  
   </form-beans>  
   
   <action-mappings>  
-    <action path="/cheese" type="org.picocontainer.web.sample.struts.CheeseAction" name="cheeseForm" scope="request">  
+    <action path="/cheese" type="com.picocontainer.web.sample.struts.CheeseAction" name="cheeseForm" scope="request">  
       <forward name="next" path="/cheese.jsp">  
     </forward></action>  
   </action-mappings>  
   
-  <controller processorclass="org.picocontainer.web.struts.PicoRequestProcessor">        
+  <controller processorclass="com.picocontainer.web.struts.PicoRequestProcessor">        
   </controller>
 {% endhighlight %}
 

@@ -11,12 +11,12 @@ p. To configure PicoContainer to handle the dependency injection of Struts2 acti
   
   <context-param>  
     <param-name>webapp-composer-class</param-name>  
-    <param-value>org.picocontainer.web.sample.ExampleStruts2Composer</param-value>  
+    <param-value>com.picocontainer.web.sample.ExampleStruts2Composer</param-value>  
   </context-param>  
   
   <filter>  
     <filter-name>picoFilter</filter-name>  
-    <filter-class>org.picocontainer.web.struts2.PicoObjectFactory$ServletFilter</filter-class>  
+    <filter-class>com.picocontainer.web.struts2.PicoObjectFactory$ServletFilter</filter-class>  
   </filter>  
   
   <filter>  
@@ -35,7 +35,7 @@ p. To configure PicoContainer to handle the dependency injection of Struts2 acti
   </filter-mapping>  
   
   <listener>  
-    <listener-class>org.picocontainer.web.struts2.Struts2PicoServletContainerListener</listener-class>  
+    <listener-class>com.picocontainer.web.struts2.Struts2PicoServletContainerListener</listener-class>  
   </listener>  
   
   <welcome-file-list>  
