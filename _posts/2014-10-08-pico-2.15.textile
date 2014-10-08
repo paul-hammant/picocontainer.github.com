@@ -1,0 +1,17 @@
+---
+layout: post
+name: PicoContainer 2.15
+bullets: General Purpose DI / IoC Container
+desc: Performance Improvement.
+date: 2014-10-08
+image: pico_release
+---
+p.  Released: October 8th, 2014
+
+h2. Bugs Fixed (since 2.14.x):
+
+* Change ArrayList to LinkedHashSet for internal performance improvement - "PICO-395":https://jira.codehaus.org/browse/PICO-395
+
+<p class="callout" style="width: 7.5em; margin: 0 auto;"> "Download Now (Download this jar from Codehaus Nexus server)":https://nexus.codehaus.org/content/repositories/releases/org/picocontainer/picocontainer/2.15/picocontainer-2.15.jar </p>
+
+
